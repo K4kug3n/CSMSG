@@ -6,6 +6,13 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 
+struct KeyPair {
+	std::array<unsigned char, 32> public_key;
+	std::array<unsigned char, 32> private_key;
+};
+
+std::array<unsigned char, 32> generate_random_key();
+
 boost::multiprecision::uint256_t decode_little_endian(const std::array<unsigned char, 32>& b);
 
 boost::multiprecision::uint256_t decode_u_coordinate(std::array<unsigned char, 32> u);
@@ -19,5 +26,7 @@ std::pair<boost::multiprecision::uint256_t, boost::multiprecision::uint256_t> cs
 boost::multiprecision::uint512_t scalar_multiplication(const boost::multiprecision::uint256_t& u, const boost::multiprecision::uint256_t& k);
 
 std::array<unsigned char, 32> X25519(const std::array<unsigned char, 32>& u, const std::array<unsigned char, 32>& k);
+
+KeyPair generate_key_pair_X25519();
 
 #endif

@@ -1,6 +1,21 @@
 #include <CurveX25519.hpp>
 
+#include <random>
+
 namespace mp = boost::multiprecision;
+
+std::array<unsigned char, 32> generate_random_key() {
+	std::random_device dev;
+	std::mt19937 rng{ dev() };
+	std::uniform_int_distribution<std::mt19937::result_type> dist{ 0, UCHAR_MAX };
+
+	std::array<unsigned char, 32> key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	for (size_t i = 0; i < key.size(); ++i) {
+		key[i] = dist(rng);
+	}
+
+	return key;
+}
 
 mp::uint256_t decode_little_endian(const std::array<unsigned char, 32>& b) {
 	mp::uint256_t sum = 0;
@@ -91,8 +106,15 @@ mp::uint512_t scalar_multiplication(const mp::uint256_t& u, const mp::uint256_t&
 }
 
 std::array<unsigned char, 32> X25519(const std::array<unsigned char, 32>& u, const std::array<unsigned char, 32>& k) {
-
 	mp::uint512_t res = scalar_multiplication(decode_u_coordinate(u), decode_scalar(k));
 
 	return encode_u_coordinate(res);
+}
+
+KeyPair generate_key_pair_X25519() {
+	std::array<unsigned char, 32> base = { 0x9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+	std::array<unsigned char, 32> private_key = generate_random_key();
+	std::array<unsigned char, 32> public_key = X25519(base, private_key);
+
+	return KeyPair{ public_key, private_key };
 }
