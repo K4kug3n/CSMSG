@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include <Curve.hpp>
+#include <CurveX25519.hpp>
 
 void main() {
 	std::cout << "Hello World" << std::endl;
