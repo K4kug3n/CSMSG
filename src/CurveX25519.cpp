@@ -43,7 +43,7 @@ mp::uint256_t decode_scalar(std::array<unsigned char, 32> k) {
 	return decode_little_endian(k);
 }
 
-std::array<unsigned char, 32> encode_u_coordinate(mp::uint512_t u) {
+std::array<unsigned char, 32> encode_u_coordinate(mp::uint256_t u) {
 	mp::uint256_t p = mp::pow(mp::uint256_t(2), 255) - 19;
 	u = u % p;
 
@@ -63,7 +63,7 @@ std::pair<mp::uint256_t, mp::uint256_t> cswap(unsigned char swap, mp::uint256_t 
 	return std::pair{ x_2, x_3 };
 }
 
-mp::uint512_t scalar_multiplication(const mp::uint256_t& u, const mp::uint256_t& k) {
+mp::uint256_t scalar_multiplication(const mp::uint256_t& u, const mp::uint256_t& k) {
 	mp::uint256_t x_1 = u;
 	mp::uint256_t x_2 = 1;
 	mp::uint256_t z_2 = 0;
@@ -102,11 +102,11 @@ mp::uint512_t scalar_multiplication(const mp::uint256_t& u, const mp::uint256_t&
 	std::pair<mp::uint256_t&, mp::uint256_t&>(x_2, x_3) = cswap(swap, x_2, x_3);
 	std::pair<mp::uint256_t&, mp::uint256_t&>(z_2, z_3) = cswap(swap, z_2, z_3);
 
-	return mp::uint512_t(x_2) * mp::powm(z_2, p - 2, p);
+	return mp::uint256_t((mp::uint512_t(x_2) * mp::powm(z_2, p - 2, p)) % p);
 }
 
 std::array<unsigned char, 32> X25519(const std::array<unsigned char, 32>& u, const std::array<unsigned char, 32>& k) {
-	mp::uint512_t res = scalar_multiplication(decode_u_coordinate(u), decode_scalar(k));
+	mp::uint256_t res = scalar_multiplication(decode_u_coordinate(u), decode_scalar(k));
 
 	return encode_u_coordinate(res);
 }
