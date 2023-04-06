@@ -21,7 +21,7 @@ add_executable(CSMSG example/main.cpp)
 target_sources(CSMSG PRIVATE "${CSMSG_SOURCES}" "${CSMSG_HEADERS}")
 target_include_directories(CSMSG PRIVATE include)
 
-file(GLOB TESTS_SOURCES tests/CurveX25519.cpp)
+file(GLOB TESTS_SOURCES tests/*.cpp)
 
 project(tests)
 add_executable(tests tests/main.cpp)
