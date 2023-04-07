@@ -4,6 +4,6 @@
 #include <vector>
 #include <array>
 
-std::array<uint64_t, 8> SHA_512(const std::vector<unsigned int>& message);
+std::array<uint64_t, 8> SHA_512(const std::vector<unsigned char>& message);
 
 #endif
