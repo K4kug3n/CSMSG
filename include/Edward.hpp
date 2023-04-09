@@ -32,12 +32,12 @@ boost::multiprecision::uint256_t recover_x(boost::multiprecision::uint256_t y, u
 
 EdwardPoint decompress(boost::multiprecision::uint256_t y);
 
-std::pair<boost::multiprecision::uint256_t, std::array<unsigned char, 32>> secret_expand(const std::array<unsigned char, 32>& k);
+std::pair<boost::multiprecision::uint256_t, std::array<uint8_t, 32>> secret_expand(const std::array<uint8_t, 32>& k);
 
-boost::multiprecision::uint256_t secret_to_public(const std::array<unsigned char, 32>& k);
+boost::multiprecision::uint256_t secret_to_public(const std::array<uint8_t, 32>& k);
 
-std::array<unsigned char, 64> Ed25519_sign(const std::array<unsigned char, 32>& k, const std::vector<unsigned char>& message);
+std::array<uint8_t, 64> Ed25519_sign(const std::array<uint8_t, 32>& k, const std::vector<uint8_t>& message);
 
-bool Ed25519_verify(const std::array<unsigned char, 32>& pub, const std::vector<unsigned char>& message, const std::array<unsigned char, 64>& signature);
+bool Ed25519_verify(const std::array<uint8_t, 32>& pub, const std::vector<uint8_t>& message, const std::array<uint8_t, 64>& signature);
 
 #endif

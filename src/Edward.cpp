@@ -114,15 +114,15 @@ EdwardPoint decompress(mp::uint256_t y) {
 	return EdwardPoint(x, y, 1, f_prod(x, y, EdwardPoint::p));
 }
 
-std::pair<boost::multiprecision::uint256_t, std::array<unsigned char, 32>> secret_expand(const std::array<unsigned char, 32>& k) {
-	std::array<uint64_t, 8> h = SHA_512(std::vector<unsigned char>{ k.begin(), k.end() });
-	std::array<unsigned char, 64> h_conv = to_bytes(h);
+std::pair<boost::multiprecision::uint256_t, std::array<uint8_t, 32>> secret_expand(const std::array<uint8_t, 32>& k) {
+	std::array<uint64_t, 8> h = SHA_512(std::vector<uint8_t>{ k.begin(), k.end() });
+	std::array<uint8_t, 64> h_conv = to_bytes(h);
 
 	mp::uint256_t a = 0;
 	for (size_t i = 0; i < 32; ++i) {
 		a += mp::uint256_t{ h_conv[i] } << (8 * i);
 	}
-	std::array<unsigned char, 32> h_half;
+	std::array<uint8_t, 32> h_half;
 	for (size_t i = 0; i < 32; ++i) {
 		h_half[i] = h_conv[i + 32];
 	}
@@ -130,42 +130,42 @@ std::pair<boost::multiprecision::uint256_t, std::array<unsigned char, 32>> secre
 	a &= (mp::uint256_t{ 1 } << 254) - 8;
 	a |= (mp::uint256_t{ 1 } << 254);
 
-	return std::pair<mp::uint256_t, std::array<unsigned char, 32>>{ a, h_half };
+	return std::pair<mp::uint256_t, std::array<uint8_t, 32>>{ a, h_half };
 }
 
-mp::uint256_t secret_to_public(const std::array<unsigned char, 32>& k) {
+mp::uint256_t secret_to_public(const std::array<uint8_t, 32>& k) {
 	mp::uint256_t a;
-	std::array<unsigned char, 32> dummy;
-	std::pair<mp::uint256_t&, std::array<unsigned char, 32>&>{ a, dummy } = secret_expand(k);
+	std::array<uint8_t, 32> dummy;
+	std::pair<mp::uint256_t&, std::array<uint8_t, 32>&>{ a, dummy } = secret_expand(k);
 
 	return (a * G()).compress();
 }
 
-std::array<unsigned char, 64> Ed25519_sign(const std::array<unsigned char, 32>& k, const std::vector<unsigned char>& message) {
+std::array<uint8_t, 64> Ed25519_sign(const std::array<uint8_t, 32>& k, const std::vector<uint8_t>& message) {
 	mp::uint256_t a;
-	std::array<unsigned char, 32> prefix;
-	std::pair<mp::uint256_t&, std::array<unsigned char, 32>&>{ a, prefix } = secret_expand(k);
+	std::array<uint8_t, 32> prefix;
+	std::pair<mp::uint256_t&, std::array<uint8_t, 32>&>{ a, prefix } = secret_expand(k);
 
-	std::array<unsigned char, 32> A = to_bytes((a * G()).compress());
-	std::vector<unsigned char> r_hash_message = message;
+	std::array<uint8_t, 32> A = to_bytes((a * G()).compress());
+	std::vector<uint8_t> r_hash_message = message;
 	r_hash_message.insert(r_hash_message.begin(), prefix.begin(), prefix.end());
 
-	std::array<unsigned char, 64> r_hash = to_bytes(SHA_512(r_hash_message));
+	std::array<uint8_t, 64> r_hash = to_bytes(SHA_512(r_hash_message));
 	mp::uint256_t r = static_cast<mp::uint256_t>(to_integer(r_hash) % EdwardPoint::q);
 	EdwardPoint R = r * G();
 	mp::uint256_t Rs = R.compress();
 
-	std::array<unsigned char, 32> Rs_bytes = to_bytes(Rs);
-	std::vector<unsigned char> h_hash_message = message;
+	std::array<uint8_t, 32> Rs_bytes = to_bytes(Rs);
+	std::vector<uint8_t> h_hash_message = message;
 	h_hash_message.insert(h_hash_message.begin(), A.begin(), A.end());
 	h_hash_message.insert(h_hash_message.begin(), Rs_bytes.begin(), Rs_bytes.end());
-	std::array<unsigned char, 64> h_hash = to_bytes(SHA_512(h_hash_message));
+	std::array<uint8_t, 64> h_hash = to_bytes(SHA_512(h_hash_message));
 	mp::uint256_t h = static_cast<mp::uint256_t>(to_integer(h_hash) % EdwardPoint::q);
 
 	mp::uint256_t s = f_add(r, f_prod(h, a, EdwardPoint::q), EdwardPoint::q);
-	std::array<unsigned char, 32> s_bytes = to_bytes(s);
+	std::array<uint8_t, 32> s_bytes = to_bytes(s);
 
-	std::array<unsigned char, 64> res;
+	std::array<uint8_t, 64> res;
 	for (size_t i = 0; i < 32; ++i) {
 		res[i] = Rs_bytes[i];
 		res[i + 32] = s_bytes[i];
@@ -174,12 +174,12 @@ std::array<unsigned char, 64> Ed25519_sign(const std::array<unsigned char, 32>& 
 	return res;
 }
 
-bool Ed25519_verify(const std::array<unsigned char, 32>& pub, const std::vector<unsigned char>& message, const std::array<unsigned char, 64>& signature) {
+bool Ed25519_verify(const std::array<uint8_t, 32>& pub, const std::vector<uint8_t>& message, const std::array<uint8_t, 64>& signature) {
 	mp::uint256_t pub_value = to_integer(pub);
 	EdwardPoint A = decompress(pub_value);
 
-	std::array<unsigned char, 32> Rs_bytes;
-	std::array<unsigned char, 32> s_bytes;
+	std::array<uint8_t, 32> Rs_bytes;
+	std::array<uint8_t, 32> s_bytes;
 	for (size_t i = 0; i < s_bytes.size(); ++i) {
 		Rs_bytes[i] = signature[i];
 		s_bytes[i] = signature[32 + i];
@@ -191,10 +191,10 @@ bool Ed25519_verify(const std::array<unsigned char, 32>& pub, const std::vector<
 		return false;
 	}
 
-	std::vector<unsigned char> h_hash_message = message;
+	std::vector<uint8_t> h_hash_message = message;
 	h_hash_message.insert(h_hash_message.begin(), pub.begin(), pub.end());
 	h_hash_message.insert(h_hash_message.begin(), Rs_bytes.begin(), Rs_bytes.end());
-	std::array<unsigned char, 64> h_hash = to_bytes(SHA_512(h_hash_message));
+	std::array<uint8_t, 64> h_hash = to_bytes(SHA_512(h_hash_message));
 	mp::uint256_t h = static_cast<mp::uint256_t>(to_integer(h_hash) % EdwardPoint::q);
 
 	EdwardPoint sB = s * G();
