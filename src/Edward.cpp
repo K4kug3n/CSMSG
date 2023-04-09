@@ -25,7 +25,7 @@ EdwardPoint operator+(const EdwardPoint& P, const EdwardPoint& Q) {
 	);
 	mp::uint256_t B = f_prod(f_add(P.y, P.x, EdwardPoint::p), f_add(Q.y, Q.x, EdwardPoint::p), EdwardPoint::p);
 
-	mp::uint512_t C = (mp::uint512_t{2} *f_prod(P.t, f_prod(Q.t, EdwardPoint::d, EdwardPoint::p), EdwardPoint::p)) % EdwardPoint::p;
+	mp::uint512_t C = (mp::uint512_t{ 2 } * f_prod(P.t, f_prod(Q.t, EdwardPoint::d, EdwardPoint::p), EdwardPoint::p)) % EdwardPoint::p;
 	mp::uint512_t D = (mp::uint512_t{ 2 } * f_prod(P.z, Q.z, EdwardPoint::p)) % EdwardPoint::p;
 	
 	mp::uint512_t E = static_cast<mp::uint512_t>(pos_mod(mp::int1024_t{ B } - mp::int1024_t{ A }, EdwardPoint::p));
@@ -91,8 +91,9 @@ mp::uint256_t recover_x(mp::uint256_t y, uint8_t sign) {
 	// Compute square root of x_2
 	mp::uint256_t x = mp::powm(x_2, (EdwardPoint::p + 3) / 8, EdwardPoint::p);
 	if ((static_cast<mp::int512_t>(f_prod(x, x, EdwardPoint::p)) - x_2) % EdwardPoint::p != 0) {
-		x = static_cast<mp::uint256_t>((mp::uint512_t{ x } * mp::powm(mp::uint512_t{ 2 }, mp::uint512_t{ (EdwardPoint::p - 1) / 4 }, mp::uint512_t{ EdwardPoint::p })) % EdwardPoint::p);
+		x = f_prod(x, mp::powm(mp::uint256_t{ 2 }, (EdwardPoint::p - 1) / 4, EdwardPoint::p), EdwardPoint::p);
 	}
+
 	if ((static_cast<mp::int512_t>( f_prod(x, x, EdwardPoint::p) ) - x_2) % EdwardPoint::p != 0) {
 		throw std::runtime_error("(x * x - x_2) % p != 0");
 	}
