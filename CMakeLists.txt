@@ -14,7 +14,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 file(GLOB CSMSG_SOURCES src/*.cpp)
-file(GLOB CSMSG_HEADERS include/*.hpp)
+file(GLOB CSMSG_HEADERS include/*.hpp include/*.inl)
 
 project(CSMSG)
 add_executable(CSMSG example/main.cpp)
