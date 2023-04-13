@@ -1,17 +1,13 @@
 #include <iostream>
 
-#include <CurveX25519.hpp>
+#include <XEdDSA.hpp>
 
 void main() {
-	KeyPair key_pair = generate_key_pair_X25519();
+	std::array<uint8_t, 32> priv = { 0, 142, 4, 173, 25, 26, 94, 45, 22, 142, 163, 230, 237, 29, 22, 200, 71, 53, 196, 75, 14, 213, 230, 178, 155, 129, 144, 109, 35, 49, 106, 108 };
+	std::array<uint8_t, 32> pub = { 72, 125, 132, 142, 92, 50, 52, 54, 60, 116, 221, 32, 192, 255, 34, 2, 173, 136, 36, 91, 49, 34, 245, 122, 214, 239, 156, 144, 112, 53, 174, 54 };
+	std::array<uint8_t, 64> nounce = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	std::vector<uint8_t> msg = { 0x72 };
+	std::array<uint8_t, 64> signature = XEdDSA_sign(priv, msg, nounce);
 
-	for (size_t i = 0; i < key_pair.public_key.size(); ++i) {
-		std::cout << std::hex << int(key_pair.public_key[i]) << " ";
-	}
-
-	std::cout << std::endl;
-
-	for (size_t i = 0; i < key_pair.private_key.size(); ++i) {
-		std::cout << std::hex << int(key_pair.private_key[i]) << " ";
-	}
+	std::cout << XEdDSA_verify(pub, msg, signature) << " " << true << std::endl;
 }
