@@ -3,6 +3,7 @@
 
 #include <boost/multiprecision/cpp_int.hpp> 
 #include <utility>
+#include <optional>
 
 struct EdwardPoint {
 	EdwardPoint(const boost::multiprecision::uint256_t& new_x, const boost::multiprecision::uint256_t& new_y,
@@ -15,12 +16,16 @@ struct EdwardPoint {
 	boost::multiprecision::uint256_t z;
 	boost::multiprecision::uint256_t t;
 
+	static std::optional<EdwardPoint> FromMontgomery(const std::array<uint8_t, 32>& u, uint8_t sign);
+
 	inline const static boost::multiprecision::uint256_t p = boost::multiprecision::pow(boost::multiprecision::uint256_t(2), 255) - 19;
 	inline const static boost::multiprecision::uint256_t q = boost::multiprecision::pow(boost::multiprecision::uint256_t(2), 252) + boost::multiprecision::uint256_t{ "27742317777372353535851937790883648493" };
 	inline const static boost::multiprecision::uint256_t d = boost::multiprecision::uint256_t{ "37095705934669439343138083508754565189542113879843219016388785533085940283555" };
 };
 
 EdwardPoint operator+(const EdwardPoint& P, const EdwardPoint& Q);
+
+EdwardPoint operator-(const EdwardPoint& P);
 
 EdwardPoint operator*(boost::multiprecision::uint256_t s, EdwardPoint P);
 
@@ -33,8 +38,6 @@ boost::multiprecision::uint256_t recover_x(boost::multiprecision::uint256_t y, u
 EdwardPoint decompress(boost::multiprecision::uint256_t y);
 
 std::pair<boost::multiprecision::uint256_t, std::array<uint8_t, 32>> secret_expand(const std::array<uint8_t, 32>& k);
-
-boost::multiprecision::uint256_t secret_to_public(const std::array<uint8_t, 32>& k);
 
 std::array<uint8_t, 64> Ed25519_sign(const std::array<uint8_t, 32>& k, const std::vector<uint8_t>& message);
 

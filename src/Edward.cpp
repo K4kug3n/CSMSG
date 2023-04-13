@@ -2,6 +2,7 @@
 
 #include <SHA512.hpp>
 #include <Utility.hpp>
+#include <Field.hpp>
 #include <exception>
 
 namespace mp = boost::multiprecision;
@@ -15,6 +16,23 @@ mp::uint256_t EdwardPoint::compress() const {
 	mp::uint256_t comp_y = f_prod(y, z_inv, EdwardPoint::p);;
 
 	return comp_y | ((comp_x & 1) << 255);
+}
+
+std::optional<EdwardPoint> EdwardPoint::FromMontgomery(const std::array<uint8_t, 32>& u, uint8_t sign) {
+	FieldElement u_elem{ u };
+
+	if (to_integer(u) >= (mp::pow(mp::uint256_t{ 2 }, 255) - 19)) {
+		return std::nullopt;
+	}
+
+	FieldElement one = FieldElement::One();
+
+	FieldElement y = (u_elem - one) * (u_elem + one).invert();
+
+	std::array<uint8_t, 32> y_bytes = y.to_bytes();
+	y_bytes[31] ^= sign << 7;
+
+	return std::optional<EdwardPoint>{ decompress(to_integer(y_bytes)) };
 }
 
 EdwardPoint operator+(const EdwardPoint& P, const EdwardPoint& Q) {	
@@ -39,6 +57,15 @@ EdwardPoint operator+(const EdwardPoint& P, const EdwardPoint& Q) {
 		mp::uint256_t{ (F * G) % EdwardPoint::p },
 		mp::uint256_t{ (E * H) % EdwardPoint::p }
 	);
+}
+
+EdwardPoint operator-(const EdwardPoint& P) {
+	return EdwardPoint{
+		to_integer((-FieldElement{to_bytes(P.x)}).to_bytes()),
+		P.y,
+		P.z,
+		to_integer((-FieldElement{to_bytes(P.t)}).to_bytes())
+	};
 }
 
 EdwardPoint operator*(mp::uint256_t s, EdwardPoint P) {
@@ -133,14 +160,6 @@ std::pair<boost::multiprecision::uint256_t, std::array<uint8_t, 32>> secret_expa
 	return std::pair<mp::uint256_t, std::array<uint8_t, 32>>{ a, h_half };
 }
 
-mp::uint256_t secret_to_public(const std::array<uint8_t, 32>& k) {
-	mp::uint256_t a;
-	std::array<uint8_t, 32> dummy;
-	std::pair<mp::uint256_t&, std::array<uint8_t, 32>&>{ a, dummy } = secret_expand(k);
-
-	return (a * G()).compress();
-}
-
 std::array<uint8_t, 64> Ed25519_sign(const std::array<uint8_t, 32>& k, const std::vector<uint8_t>& message) {
 	mp::uint256_t a;
 	std::array<uint8_t, 32> prefix;
@@ -165,13 +184,11 @@ std::array<uint8_t, 64> Ed25519_sign(const std::array<uint8_t, 32>& k, const std
 	mp::uint256_t s = f_add(r, f_prod(h, a, EdwardPoint::q), EdwardPoint::q);
 	std::array<uint8_t, 32> s_bytes = to_bytes(s);
 
-	std::array<uint8_t, 64> res;
-	for (size_t i = 0; i < 32; ++i) {
-		res[i] = Rs_bytes[i];
-		res[i + 32] = s_bytes[i];
-	}
+	std::array<uint8_t, 64> signature;
+	std::copy(Rs_bytes.begin(), Rs_bytes.end(), signature.begin());
+	std::copy(s_bytes.begin(), s_bytes.end(), signature.begin() + 32);
 
-	return res;
+	return signature;
 }
 
 bool Ed25519_verify(const std::array<uint8_t, 32>& pub, const std::vector<uint8_t>& message, const std::array<uint8_t, 64>& signature) {
