@@ -92,7 +92,7 @@ FieldElement FieldElement::pow2k(uint32_t k) const {
 		k = k - 1;
 	}
 
-	return FieldElement{ a };
+	return FieldElement{ std::move(a) };
 }
 
 std::pair<FieldElement, FieldElement> FieldElement::pow22501() const {
@@ -147,38 +147,38 @@ std::array<uint8_t, 32> FieldElement::to_bytes() const {
 	limbs[4] = limbs[4] & low_51_bit_mask;
 
 	std::array<uint8_t, 32> s;
-	s[0] = limbs[0];
-	s[1] = uint64_t{ limbs[0] >> 8 };
-	s[2] = uint64_t{ limbs[0] >> 16 };
-	s[3] = uint64_t{ limbs[0] >> 24 };
-	s[4] = uint64_t{ limbs[0] >> 32 };
-	s[5] = uint64_t{ limbs[0] >> 40 };
-	s[6] = uint64_t{ (limbs[0] >> 48) | (limbs[1] << 3) };
-	s[7] = uint64_t{ limbs[1] >> 5 };
-	s[8] = uint64_t{ limbs[1] >> 13 };
-	s[9] = uint64_t{ limbs[1] >> 21 };
-	s[10] = uint64_t{ limbs[1] >> 29 };
-	s[11] = uint64_t{ limbs[1] >> 37 };
-	s[12] = uint64_t{ (limbs[1] >> 45) | (limbs[2] << 6) };
-	s[13] = uint64_t{ limbs[2] >> 2 };
-	s[14] = uint64_t{ limbs[2] >> 10 };
-	s[15] = uint64_t{ limbs[2] >> 18 };
-	s[16] = uint64_t{ limbs[2] >> 26 };
-	s[17] = uint64_t{ limbs[2] >> 34 };
-	s[18] = uint64_t{ limbs[2] >> 42 };
-	s[19] = uint64_t{ (limbs[2] >> 50) | (limbs[3] << 1) };
-	s[20] = uint64_t{ limbs[3] >> 7 };
-	s[21] = uint64_t{ limbs[3] >> 15 };
-	s[22] = uint64_t{ limbs[3] >> 23 };
-	s[23] = uint64_t{ limbs[3] >> 31 };
-	s[24] = uint64_t{ limbs[3] >> 39 };
-	s[25] = uint64_t{ (limbs[3] >> 47) | (limbs[4] << 4) };
-	s[26] = uint64_t{ limbs[4] >> 4 };
-	s[27] = uint64_t{ limbs[4] >> 12 };
-	s[28] = uint64_t{ limbs[4] >> 20 };
-	s[29] = uint64_t{ limbs[4] >> 28 };
-	s[30] = uint64_t{ limbs[4] >> 36 };
-	s[31] = uint64_t{ limbs[4] >> 44 };
+	s[0] =  static_cast<uint8_t>(limbs[0]);
+	s[1] =  static_cast<uint8_t>(limbs[0] >> 8 );
+	s[2] =  static_cast<uint8_t>(limbs[0] >> 16 );
+	s[3] =  static_cast<uint8_t>(limbs[0] >> 24 );
+	s[4] =  static_cast<uint8_t>(limbs[0] >> 32 );
+	s[5] =  static_cast<uint8_t>(limbs[0] >> 40 );
+	s[6] =  static_cast<uint8_t>((limbs[0] >> 48) | (limbs[1] << 3) );
+	s[7] =  static_cast<uint8_t>(limbs[1] >> 5 );
+	s[8] =  static_cast<uint8_t>(limbs[1] >> 13 );
+	s[9] =  static_cast<uint8_t>(limbs[1] >> 21 );
+	s[10] = static_cast<uint8_t>(limbs[1] >> 29 );
+	s[11] = static_cast<uint8_t>(limbs[1] >> 37 );
+	s[12] = static_cast<uint8_t>((limbs[1] >> 45) | (limbs[2] << 6) );
+	s[13] = static_cast<uint8_t>(limbs[2] >> 2 );
+	s[14] = static_cast<uint8_t>(limbs[2] >> 10 );
+	s[15] = static_cast<uint8_t>(limbs[2] >> 18 );
+	s[16] = static_cast<uint8_t>(limbs[2] >> 26 );
+	s[17] = static_cast<uint8_t>(limbs[2] >> 34 );
+	s[18] = static_cast<uint8_t>(limbs[2] >> 42 );
+	s[19] = static_cast<uint8_t>((limbs[2] >> 50) | (limbs[3] << 1) );
+	s[20] = static_cast<uint8_t>(limbs[3] >> 7 );
+	s[21] = static_cast<uint8_t>(limbs[3] >> 15 );
+	s[22] = static_cast<uint8_t>(limbs[3] >> 23 );
+	s[23] = static_cast<uint8_t>(limbs[3] >> 31 );
+	s[24] = static_cast<uint8_t>(limbs[3] >> 39 );
+	s[25] = static_cast<uint8_t>((limbs[3] >> 47) | (limbs[4] << 4) );
+	s[26] = static_cast<uint8_t>(limbs[4] >> 4 );
+	s[27] = static_cast<uint8_t>(limbs[4] >> 12 );
+	s[28] = static_cast<uint8_t>(limbs[4] >> 20 );
+	s[29] = static_cast<uint8_t>(limbs[4] >> 28 );
+	s[30] = static_cast<uint8_t>(limbs[4] >> 36 );
+	s[31] = static_cast<uint8_t>(limbs[4] >> 44 );
 
 	assert((s[31] & 0b10000000) == 0);
 
@@ -210,7 +210,7 @@ FieldElement FieldElement::Reduce(std::array<uint64_t, 5> parts) {
 	parts[3] += c_2;
 	parts[4] += c_3;
 
-	return FieldElement{ parts };
+	return FieldElement{ std::move(parts) };
 }
 
 FieldElement operator-(const FieldElement& lhs, const FieldElement& rhs) {
@@ -239,7 +239,7 @@ FieldElement operator+(const FieldElement& lhs, const FieldElement& rhs) {
 		out[i] += rhs.m_repr[i];
 	}
 
-	return FieldElement{ out };
+	return FieldElement{ std::move(out) };
 }
 
 FieldElement operator*(const FieldElement& lhs, const FieldElement& rhs) {
@@ -278,5 +278,5 @@ FieldElement operator*(const FieldElement& lhs, const FieldElement& rhs) {
 	out[1] += out[0] >> 51;
 	out[0] &= low_51_bit_mask;
 
-	return FieldElement{ out };
+	return FieldElement{ std::move(out) };
 }
