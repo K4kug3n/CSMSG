@@ -4,7 +4,6 @@
 #include <array>
 
 #include <XEdDSA.hpp>
-#include <Utility.hpp>
 
 TEST_CASE("XEdDSA Signature", "[XEdDSA]") {
 	SECTION("Test Vector 1") {
