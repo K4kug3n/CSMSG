@@ -14,6 +14,9 @@ boost::multiprecision::uint512_t to_integer(const std::array<uint8_t, 64>& arr);
 
 boost::multiprecision::uint256_t to_integer(const std::array<uint8_t, 32>& arr);
 
+template<std::size_t N>
+std::array<uint8_t, N> random_bytes_array();
+
 boost::multiprecision::uint256_t f_prod(const boost::multiprecision::uint256_t& a, const boost::multiprecision::uint256_t& b, const boost::multiprecision::uint256_t& p);
 
 boost::multiprecision::uint256_t f_add(const boost::multiprecision::uint256_t& a, const boost::multiprecision::uint256_t& b, const boost::multiprecision::uint256_t& p);
