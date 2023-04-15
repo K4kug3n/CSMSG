@@ -33,6 +33,7 @@ public:
 	PrivateKey(PrivateKey&&) = default;
 	~PrivateKey() = default;
 
+	std::array<uint8_t, 32> compute_key_agreement(const PublicKey& key) const;
 	PublicKey compute_public_key() const;
 	std::array<uint8_t, 64> compute_signature(const std::vector<uint8_t>& msg) const;
 	const std::array<uint8_t, 32>& to_bytes() const;
@@ -54,6 +55,8 @@ public:
 	KeyPair(KeyPair&&) = default;
 	~KeyPair() = default;
 
+	std::array<uint8_t, 32> compute_key_agreement(const KeyPair& key) const;
+
 	PrivateKey private_key;
 	PublicKey public_key;
 
@@ -61,6 +64,33 @@ public:
 
 	KeyPair& operator=(const KeyPair&) = default;
 	KeyPair& operator=(KeyPair&&) = default;
+};
+
+//class KeyBundle {
+//public:
+//	KeyBundle() = delete;
+//	KeyBundle(const KeyBundle&) = default;
+//	KeyBundle(KeyBundle&&) = default;
+//	~KeyBundle() = default;
+//
+//	KeyBundle& operator=(const KeyBundle&) = default;
+//	KeyBundle& operator=(KeyBundle&&) = default;
+//};
+
+class PreKeyBundle {
+public:
+	PreKeyBundle() = delete;
+	PreKeyBundle(const KeyPair& identity_key);
+	PreKeyBundle(const PreKeyBundle&) = default;
+	PreKeyBundle(PreKeyBundle&&) = default;
+	~PreKeyBundle() = default;
+
+	KeyPair prekey;
+	std::array<uint8_t, 64> prekey_signature;
+	KeyPair one_time_prekey;
+
+	PreKeyBundle& operator=(const PreKeyBundle&) = default;
+	PreKeyBundle& operator=(PreKeyBundle&&) = default;
 };
 
 #endif
