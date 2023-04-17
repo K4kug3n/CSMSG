@@ -12,17 +12,33 @@ void main() {
 	KeyPair ephemeral_key_B = KeyPair::Generate();
 	PreKeyBundle prekey_bundle_B{ identity_key_B };
 
-	// Alice to Bob
-	std::array<uint8_t, 32> DH1 = identity_key_A.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH2 = ephemeral_key_A.compute_key_agreement(identity_key_B);
-	std::array<uint8_t, 32> DH3 = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH4 = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.one_time_prekey);
+	// Alice side
+	std::array<uint8_t, 32> DH1_A = identity_key_A.compute_key_agreement(prekey_bundle_B.prekey);
+	std::array<uint8_t, 32> DH2_A = ephemeral_key_A.compute_key_agreement(identity_key_B);
+	std::array<uint8_t, 32> DH3_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.prekey);
+	std::array<uint8_t, 32> DH4_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.one_time_prekey);
 
-	std::vector<uint8_t> DH = std::vector<uint8_t>(128, 0);
-	std::copy(DH1.begin(), DH1.end(), DH.begin());
-	std::copy(DH2.begin(), DH2.end(), DH.begin() + 32);
-	std::copy(DH3.begin(), DH3.end(), DH.begin() + 64);
-	std::copy(DH4.begin(), DH4.end(), DH.begin() + 96);
+	std::vector<uint8_t> DH_A = std::vector<uint8_t>(128, 0);
+	std::copy(DH1_A.begin(), DH1_A.end(), DH_A.begin());
+	std::copy(DH2_A.begin(), DH2_A.end(), DH_A.begin() + 32);
+	std::copy(DH3_A.begin(), DH3_A.end(), DH_A.begin() + 64);
+	std::copy(DH4_A.begin(), DH4_A.end(), DH_A.begin() + 96);
 
-	std::array<uint8_t, 32> SK = KDF(DH);
+	std::array<uint8_t, 32> SK_A = KDF(DH_A);
+
+	// Bob Side 
+	std::array<uint8_t, 32> DH1_B = prekey_bundle_B.prekey.compute_key_agreement(identity_key_A);
+	std::array<uint8_t, 32> DH2_B = identity_key_B.compute_key_agreement(ephemeral_key_A);
+	std::array<uint8_t, 32> DH3_B = prekey_bundle_B.prekey.compute_key_agreement(ephemeral_key_A);
+	std::array<uint8_t, 32> DH4_B = prekey_bundle_B.one_time_prekey.compute_key_agreement(ephemeral_key_A);
+
+	std::vector<uint8_t> DH_B = std::vector<uint8_t>(128, 0);
+	std::copy(DH1_B.begin(), DH1_B.end(), DH_B.begin());
+	std::copy(DH2_B.begin(), DH2_B.end(), DH_B.begin() + 32);
+	std::copy(DH3_B.begin(), DH3_B.end(), DH_B.begin() + 64);
+	std::copy(DH4_B.begin(), DH4_B.end(), DH_B.begin() + 96);
+
+	std::array<uint8_t, 32> SK_B = KDF(DH_B);
+
+	std::cout << (SK_A == SK_B) << " " << true << std::endl;
 }
