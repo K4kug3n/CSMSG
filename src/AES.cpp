@@ -2,14 +2,7 @@
 
 #include <vector>
 #include <functional>
-
-template <size_t N>
-uint32_t uint8_to_uint32(const std::array<uint8_t, N>::const_iterator& it) {
-	return uint32_t{ *it }
-		| (uint32_t{ *(it + 1) } << 8)
-		| (uint32_t{ *(it + 2) } << 16)
-		| (uint32_t{ *(it + 3) } << 24);
-}
+#include <cassert>
 
 uint8_t rc(size_t i) {
 	constexpr std::array<uint8_t, 10> constants = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36 };
@@ -25,7 +18,8 @@ std::array<uint8_t, 4> rotate(const std::array<uint8_t, 4>& word) {
 	return std::array<uint8_t, 4>{ word[1], word[2], word[3], word[0] };
 }
 
-std::array<uint8_t, 4> sbox(const std::array<uint8_t, 4>& word) {
+template<size_t N>
+std::array<uint8_t, N> sbox(const std::array<uint8_t, N>& state) {
 	constexpr std::array<uint8_t, 256> sbox_values = {
 		0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 		0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -45,10 +39,16 @@ std::array<uint8_t, 4> sbox(const std::array<uint8_t, 4>& word) {
 		0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 	};
 
-	return std::array<uint8_t, 4>{ sbox_values[word[1]], sbox_values[word[2]], sbox_values[word[2]], sbox_values[word[3]] };
+	std::array<uint8_t, N> res;
+	for (size_t i = 0; i < N; ++i) {
+		res[i] = sbox_values[state[i]];
+	}
+
+	return res;
 }
 
-std::array<uint8_t, 4> sbox_inv(const std::array<uint8_t, 4>& word) {
+template<size_t N>
+std::array<uint8_t, N> inv_sbox(const std::array<uint8_t, N>& state) {
 	constexpr std::array<uint8_t, 256> sbox_inv_values = {
 		0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
 		0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -68,19 +68,168 @@ std::array<uint8_t, 4> sbox_inv(const std::array<uint8_t, 4>& word) {
 		0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D
 	};
 
-	return std::array<uint8_t, 4>{ sbox_inv_values[word[1]], sbox_inv_values[word[2]], sbox_inv_values[word[2]], sbox_inv_values[word[3]] };
+	std::array<uint8_t, N> res;
+	for (size_t i = 0; i < N; ++i) {
+		res[i] = sbox_inv_values[state[i]];
+	}
+
+	return res;
 }
 
-std::array<uint8_t, 4> arr_xor(const std::array<uint8_t, 4>& lhs, const std::array<uint8_t, 4>& rhs) {
-	return std::array<uint8_t, 4>{ 
-		lhs[0] ^ rhs[0],
-		lhs[1] ^ rhs[1],
-		lhs[2] ^ rhs[2],
-		lhs[3] ^ rhs[3]
+std::array<uint8_t, 16> shift_row(const std::array<uint8_t, 16>& state) {
+	// 0 4 8  12 => 0  4  8  12
+	// 1 5 9  13    5  9  13 1
+	// 2 6 10 14    10 14 2  6
+	// 3 7 11 15    15 3  7  11
+
+	std::array<uint8_t, 16> res;
+	// Row 1
+	res[0] = state[0];
+	res[4] = state[4];
+	res[8] = state[8];
+	res[12] = state[12];
+
+	// Row 2
+	res[1] = state[5];
+	res[5] = state[9];
+	res[9] = state[13];
+	res[13] = state[1];
+
+	// Row 3
+	res[2] = state[10];
+	res[6] = state[14];
+	res[10] = state[2];
+	res[14] = state[6];
+
+	// Row 4
+	res[3] = state[15];
+	res[7] = state[3];
+	res[11] = state[7];
+	res[15] = state[11];
+
+	return res;
+}
+
+std::array<uint8_t, 16> inv_shift_row(const std::array<uint8_t, 16>& state) {
+	// 0 4 8  12 <= 0  4  8  12
+	// 1 5 9  13    5  9  13 1
+	// 2 6 10 14    10 14 2  6
+	// 3 7 11 15    15 3  7  11
+
+	std::array<uint8_t, 16> res;
+	// Row 1
+	res[0] = state[0];
+	res[4] = state[4];
+	res[8] = state[8];
+	res[12] = state[12];
+
+	// Row 2
+	res[5] = state[1];
+	res[9] = state[5];
+	res[13] = state[9];
+	res[1] = state[13];
+
+	// Row 3
+	res[10] = state[2];
+	res[14] = state[6];
+	res[2] = state[10];
+	res[6] = state[14];
+
+	// Row 4
+	res[15] = state[3];
+	res[3] = state[7];
+	res[7] = state[11];
+	res[11] = state[15];
+
+	return res;
+}
+
+// Product in Galois Field of 2^8
+uint8_t gf2prod(uint8_t x, uint8_t y) {
+	uint8_t ret = 0;
+	for (size_t i = 0; i < 8; ++i) {
+		if ((y & 1) != 0) {
+			ret = ret ^ x;
+		}
+			
+		uint8_t b = (x & 0x80);
+		x = (x << 1) & 0xFF;
+		if (b) {
+			x = x ^ 0x1B;
+		}		
+		y = (y >> 1) & 0xFF;
+	}
+
+	return ret;
+}
+
+std::array<uint8_t, 16> mix_column(const std::array<uint8_t, 16>& state) {
+	constexpr std::array<std::array<uint8_t, 4>, 4> coeffs = {
+		std::array<uint8_t, 4>{ 0x02, 0x03, 0x01, 0x01 },
+		std::array<uint8_t, 4>{ 0x01, 0x02, 0x03, 0x01 },
+		std::array<uint8_t, 4>{ 0x01, 0x01, 0x02, 0x03 },
+		std::array<uint8_t, 4>{ 0x03, 0x01, 0x01, 0x02 }
 	};
+
+	std::array<uint8_t, 16> res;
+	for (size_t i = 0; i < 4; ++i) {
+		for (size_t j = 0; j < 4; ++j) {
+			res[i * 4 + j] = 
+				gf2prod(state[i * 4 + 0], coeffs[j][0]) ^ 
+				gf2prod(state[i * 4 + 1], coeffs[j][1]) ^
+				gf2prod(state[i * 4 + 2], coeffs[j][2]) ^ 
+				gf2prod(state[i * 4 + 3], coeffs[j][3]);
+		}
+	}
+
+	return res;
 }
 
-std::array<std::array<uint8_t, 32>, 15> key_expansion(const std::array<uint8_t, 32>& key) {
+std::array<uint8_t, 16> inv_mix_column(const std::array<uint8_t, 16>& state) {
+	constexpr std::array<std::array<uint8_t, 4>, 4> coeffs = {
+		std::array<uint8_t, 4>{ 0x0E, 0x0B, 0x0D, 0x09 },
+		std::array<uint8_t, 4>{ 0x09, 0x0E, 0x0B, 0x0D },
+		std::array<uint8_t, 4>{ 0x0D, 0x09, 0x0E, 0x0B },
+		std::array<uint8_t, 4>{ 0x0B, 0x0D, 0x09, 0x0E }
+	};
+
+	std::array<uint8_t, 16> res;
+	for (size_t i = 0; i < 4; ++i) {
+		for (size_t j = 0; j < 4; ++j) {
+			res[i * 4 + j] =
+				gf2prod(state[i * 4 + 0], coeffs[j][0]) ^
+				gf2prod(state[i * 4 + 1], coeffs[j][1]) ^
+				gf2prod(state[i * 4 + 2], coeffs[j][2]) ^
+				gf2prod(state[i * 4 + 3], coeffs[j][3]);
+		}
+	}
+
+	return res;
+}
+
+template<size_t N>
+std::array<uint8_t, N> arr_xor(const std::array<uint8_t, N>& lhs, const std::array<uint8_t, N>& rhs) {
+	std::array<uint8_t, N> res;
+	for (size_t i = 0; i < N; ++i) {
+		res[i] = static_cast<unsigned char>(lhs[i] ^ rhs[i]);
+	}
+
+	return res;
+}
+
+std::array<uint8_t, 16> to_round_key(const std::vector<std::array<uint8_t, 4>>::const_iterator& it) {
+	std::array<uint8_t, 16> round_key;
+	for (size_t i = 0; i < 4; ++i) {
+		round_key[i * 4 + 0] = (*(it + i))[0];
+		round_key[i * 4 + 1] = (*(it + i))[1];
+		round_key[i * 4 + 2] = (*(it + i))[2];
+		round_key[i * 4 + 3] = (*(it + i))[3];
+	}
+
+	return round_key;
+}
+
+std::array<std::array<uint8_t, 16>, 15> key_expansion(const std::array<uint8_t, 32>& key) {
 	constexpr size_t N = 8;
 	constexpr size_t R = 15;
 
@@ -97,7 +246,7 @@ std::array<std::array<uint8_t, 32>, 15> key_expansion(const std::array<uint8_t, 
 		else if ((i >= N) && ((i % N) == 0)) {
 			W[i] = arr_xor(W[i - N], arr_xor(sbox(rotate(W[i - 1])), rcon(i / N)));
 		}
-		else if ((i >= N) && (N > 6) && ((i % N) == 0)) {
+		else if ((i >= N) && (N > 6) && ((i % N) == 4)) {
 			W[i] = arr_xor(W[i - N], sbox(W[i - 1]));
 		}
 		else {
@@ -105,9 +254,115 @@ std::array<std::array<uint8_t, 32>, 15> key_expansion(const std::array<uint8_t, 
 		}
 	}
 
+	std::array<std::array<uint8_t, 16>, 15> round_keys;
+	for (size_t i = 0; i < round_keys.size(); ++i) {
+		round_keys[i] = to_round_key(W.begin() + i * 4);
+	}
 
+	return round_keys;
 }
 
 std::array<uint8_t, 16> AES_block_encryption(const std::array<uint8_t, 16>& plaintext, const std::array<uint8_t, 32>& key) {
+	constexpr size_t R = 15;
 
+	std::array<std::array<uint8_t, 16>, 15> round_keys = key_expansion(key);
+
+	std::array<uint8_t, 16> state = arr_xor(round_keys[0], plaintext);
+
+	for (size_t i = 1; i < R; ++i) {
+		state = sbox(state);
+
+		state = shift_row(state);
+
+		if (i != (R - 1)) {
+			state = mix_column(state);
+		}
+
+		state = arr_xor(state, round_keys[i]);
+	}
+
+	return state;
+}
+
+std::array<uint8_t, 16> AES_block_decryption(const std::array<uint8_t, 16>& cyphertext, const std::array<uint8_t, 32>& key) {
+	constexpr size_t R = 15;
+
+	std::array<std::array<uint8_t, 16>, 15> round_keys = key_expansion(key);
+
+	std::array<uint8_t, 16> state = cyphertext;
+
+	for (size_t i = (R - 1); i != 0; --i) {
+		state = arr_xor(state, round_keys[i]);
+
+		if (i != (R - 1)) {
+			state = inv_mix_column(state);
+		}
+
+		state = inv_shift_row(state);
+
+		state = inv_sbox(state);
+	}
+
+	state = arr_xor(state, round_keys[0]);
+
+	return state;
+}
+
+static std::vector<uint8_t> pad(std::vector<uint8_t> msg) {
+	uint8_t pad_value = 16 - (msg.size() % 16);
+	std::vector<uint8_t> padding = std::vector<uint8_t>(pad_value, pad_value);
+	msg.insert(msg.end(), padding.begin(), padding.end());
+
+	return msg;
+}
+
+static std::vector<uint8_t> unpad(const std::vector<uint8_t>& msg) {
+	assert(!msg.empty());
+	uint8_t pad_value = msg.back();
+
+	return std::vector<uint8_t>(msg.begin(), msg.end() - pad_value);
+}
+
+std::vector<uint8_t> CBC_AES_encryption(const std::vector<uint8_t>& msg, const std::array<uint8_t, 32>& key, std::array<uint8_t, 16> IV) {
+	std::vector<uint8_t> padded_msg = pad(msg);
+	assert(padded_msg.size() % 16 == 0);
+	
+	std::vector<uint8_t> cypher_blocks;
+	cypher_blocks.insert(cypher_blocks.begin(), IV.begin(), IV.end());
+
+	for (size_t i = 0; i < padded_msg.size(); i += 16) {
+		std::array<uint8_t, 16> block;
+		std::copy(padded_msg.begin() + i, padded_msg.begin() + i + 16, block.begin());
+
+		block = arr_xor(block, IV);
+
+		std::array<uint8_t, 16> cypher_block = AES_block_encryption(block, key);
+
+		IV = cypher_block;
+		cypher_blocks.insert(cypher_blocks.end(), cypher_block.begin(), cypher_block.end());
+	}
+
+	return cypher_blocks;
+}
+
+std::vector<uint8_t> CBC_AES_decryption(const std::vector<uint8_t>& cyphertext, const std::array<uint8_t, 32>& key) {
+	assert(!cyphertext.empty() && cyphertext.size() % 16 == 0);
+
+	std::array<uint8_t, 16> IV;
+	std::copy(cyphertext.begin(), cyphertext.begin() + 16, IV.begin());
+
+	std::vector<uint8_t> plain_blocks;
+	for (size_t i = 16; i < cyphertext.size(); i += 16) {
+		std::array<uint8_t, 16> block;
+		std::copy(cyphertext.begin() + i, cyphertext.begin() + i + 16, block.begin());
+
+		std::array<uint8_t, 16> plain_block = AES_block_decryption(block, key);
+
+		plain_block = arr_xor(plain_block, IV);
+
+		IV = plain_block;
+		plain_blocks.insert(plain_blocks.end(), plain_block.begin(), plain_block.end());
+	}
+
+	return unpad(plain_blocks);
 }
