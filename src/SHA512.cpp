@@ -4,7 +4,7 @@
 
 namespace mp = boost::multiprecision;
 
-std::vector<unsigned char> pad(std::vector<unsigned char> message) {
+static std::vector<uint8_t> pad(std::vector<uint8_t> message) {
 	size_t l = message.size() * 8;
 	size_t r = (l + 1) % 1024;
 	size_t k = (1024 - r) + 896;
