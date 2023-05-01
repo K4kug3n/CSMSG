@@ -40,7 +40,7 @@ std::array<uint8_t, 64> HMAC_512(std::vector<uint8_t> key, const std::vector<uin
 std::vector<uint8_t> HKDF_expand(const std::array<uint8_t, 64>& PRK, const std::vector<uint8_t>& info, size_t L) {
 	assert(L <= 255 * 64);
 
-	size_t N = std::ceil(float(L) / 64);
+	size_t N = static_cast<size_t>(std::ceil(float(L) / 64));
 	
 	std::vector<uint8_t> T;
 	std::vector<uint8_t> T_prev;
