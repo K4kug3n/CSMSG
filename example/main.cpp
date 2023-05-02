@@ -41,4 +41,8 @@ void main() {
 	std::array<uint8_t, 32> SK_B = KDF(DH_B);
 
 	std::cout << (SK_A == SK_B) << " " << true << std::endl;
+
+	std::array<uint8_t, 64> AD;
+	std::copy(identity_key_A.public_key.to_bytes().begin(), identity_key_A.public_key.to_bytes().end(), AD.begin());
+	std::copy(identity_key_B.public_key.to_bytes().begin(), identity_key_B.public_key.to_bytes().end(), AD.begin() + 32);
 }
