@@ -16,10 +16,12 @@ public:
 	const std::array<uint8_t, 32>& to_bytes() const;
 	bool verify_signature(const std::vector<uint8_t>& msg, const std::array<uint8_t, 64>& signature) const;
 
-	friend std::ostream& operator<<(std::ostream& stream, const PublicKey& key);
-
 	PublicKey& operator=(const PublicKey&) = default;
 	PublicKey& operator=(PublicKey&&) = default;
+
+	friend std::ostream& operator<<(std::ostream& stream, const PublicKey& key);
+	friend bool operator==(const PublicKey& lhs, const PublicKey& rhs);
+	friend bool operator!=(const PublicKey& lhs, const PublicKey& rhs);
 
 private:
 	std::array<uint8_t, 32> m_repr;
@@ -38,10 +40,12 @@ public:
 	std::array<uint8_t, 64> compute_signature(const std::vector<uint8_t>& msg) const;
 	const std::array<uint8_t, 32>& to_bytes() const;
 
-	friend std::ostream& operator<<(std::ostream& stream, const PrivateKey& key);
-
 	PrivateKey& operator=(const PrivateKey&) = default;
 	PrivateKey& operator=(PrivateKey&&) = default;
+
+	friend std::ostream& operator<<(std::ostream& stream, const PrivateKey& key);
+	friend bool operator==(const PrivateKey& lhs, const PrivateKey& rhs);
+	friend bool operator!=(const PrivateKey& lhs, const PrivateKey& rhs);
 
 private:
 	std::array<uint8_t, 32> m_repr;
@@ -56,6 +60,7 @@ public:
 	~KeyPair() = default;
 
 	std::array<uint8_t, 32> compute_key_agreement(const KeyPair& key) const;
+	std::array<uint8_t, 32> compute_key_agreement(const PublicKey& key) const;
 
 	PrivateKey private_key;
 	PublicKey public_key;
@@ -64,6 +69,9 @@ public:
 
 	KeyPair& operator=(const KeyPair&) = default;
 	KeyPair& operator=(KeyPair&&) = default;
+
+	friend bool operator==(const KeyPair& lhs, const KeyPair& rhs);
+	friend bool operator!=(const KeyPair& lhs, const KeyPair& rhs);
 };
 
 //class KeyBundle {
