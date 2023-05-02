@@ -57,25 +57,48 @@ std::vector<uint8_t> HKDF_expand(const std::array<uint8_t, 64>& PRK, const std::
 	return std::vector<uint8_t>{ T.begin(), T.begin() + L };
 }
 
-std::array<uint8_t, 64> HKDF_extract(const std::array<uint8_t, 64>& salt, const std::vector<uint8_t>& IKM) {
-	return HMAC_512({ salt.begin(), salt.end() }, IKM);
+std::array<uint8_t, 64> HKDF_extract(const std::vector<uint8_t>& salt, const std::vector<uint8_t>& IKM) {
+	return HMAC_512(salt, IKM);
 }
 
-std::vector<uint8_t> HKDF(const std::array<uint8_t, 64>& salt, const std::vector<uint8_t>& IKM, const std::vector<uint8_t>& info, size_t L) {
+std::vector<uint8_t> HKDF(const std::vector<uint8_t>& salt, const std::vector<uint8_t>& IKM, const std::vector<uint8_t>& info, size_t L) {
 	return HKDF_expand(HKDF_extract(salt, IKM), info, L);
 }
 
 std::array<uint8_t, 32> KDF(std::vector<uint8_t> KM) {
 	KM.insert(KM.begin(), 32, 0xFF);
 
-	std::array<uint8_t, 64> salt;
-	salt.fill(0x0);
+	std::vector<uint8_t> salt = std::vector<uint8_t>(64, 0x0);
 
-	std::vector<uint8_t> hkdf = HKDF(salt, KM, { 67, 83, 77, 83, 71 }, 32); // "CSMSG" as info
+	std::vector<uint8_t> hkdf = HKDF(salt, KM, { 'C', 'S', 'M', 'S', 'G' }, 32); // "CSMSG" as info
 	assert(hkdf.size() == 32);
 
 	std::array<uint8_t, 32> res;
 	std::copy(hkdf.begin(), hkdf.end(), res.begin());
 
 	return res; 
+}
+
+std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>> KDF_RK(const std::array<uint8_t, 32>& rk, std::array<uint8_t, 32> dh_out) {
+	std::vector<uint8_t> output = HKDF({ rk.begin(), rk.end() }, { dh_out.begin(), dh_out.end() }, { 'G', 'S', 'M', 'S', 'C' }, 64);
+	assert(output.size() == 64);
+
+	std::array<uint8_t, 32> root_key;
+	std::copy(output.begin(), output.begin() + 32, root_key.begin());
+	std::array<uint8_t, 32> chain_key;
+	std::copy(output.begin() + 32, output.end(), chain_key.begin());
+
+	return std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>>{ root_key, chain_key };
+}
+
+std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>> KDF_CK(const std::array<uint8_t, 32>& ck) {
+	std::array<uint8_t, 64> long_message_key = HMAC_512({ ck.begin(), ck.end() }, { 0x1 });
+	std::array<uint8_t, 64> long_next_chain_key = HMAC_512({ ck.begin(), ck.end() }, { 0x2 });
+
+	std::array<uint8_t, 32> message_key;
+	std::copy(long_message_key.begin(), long_message_key.end(), message_key.begin());
+	std::array<uint8_t, 32> next_chain_key;
+	std::copy(long_next_chain_key.begin(), long_next_chain_key.end(), next_chain_key.begin());
+
+	return std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>>{ message_key, next_chain_key };
 }
