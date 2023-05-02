@@ -51,6 +51,22 @@ std::ostream& operator<<(std::ostream& stream, const PrivateKey& key) {
 	return stream;
 }
 
+bool operator==(const PrivateKey& lhs, const PrivateKey& rhs) {
+	return lhs.m_repr == rhs.m_repr;
+}
+
+bool operator!=(const PrivateKey& lhs, const PrivateKey& rhs) {
+	return !(lhs == rhs);
+}
+
+bool operator==(const KeyPair& lhs, const KeyPair& rhs) {
+	return (lhs.private_key == rhs.private_key) && (lhs.public_key == rhs.public_key);
+}
+
+bool operator!=(const KeyPair& lhs, const KeyPair& rhs) {
+	return !(lhs == rhs);
+}
+
 std::ostream& operator<<(std::ostream& stream, const PublicKey& key) {
 	for (auto b : key.m_repr) {
 		stream << int(b) << ", ";
@@ -59,11 +75,23 @@ std::ostream& operator<<(std::ostream& stream, const PublicKey& key) {
 	return stream;
 }
 
+bool operator==(const PublicKey& lhs, const PublicKey& rhs) {
+	return lhs.m_repr == rhs.m_repr;
+}
+
+bool operator!=(const PublicKey& lhs, const PublicKey& rhs) {
+	return !(lhs == rhs);
+}
+
 KeyPair::KeyPair(PrivateKey priv, PublicKey pub) :
 	private_key(std::move(priv)), public_key(std::move(pub)) { }
 
 std::array<uint8_t, 32> KeyPair::compute_key_agreement(const KeyPair& key) const {
 	return private_key.compute_key_agreement(key.public_key);
+}
+
+std::array<uint8_t, 32> KeyPair::compute_key_agreement(const PublicKey& key) const {
+	return private_key.compute_key_agreement(key);
 }
 
 KeyPair KeyPair::Generate() {
