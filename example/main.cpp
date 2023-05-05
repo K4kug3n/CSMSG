@@ -2,6 +2,7 @@
 
 #include <Keys.hpp>
 #include <KDF.hpp>
+#include <State.hpp>
 
 void main() {
 	KeyPair identity_key_A = KeyPair::Generate();
@@ -45,4 +46,17 @@ void main() {
 	std::array<uint8_t, 64> AD;
 	std::copy(identity_key_A.public_key.to_bytes().begin(), identity_key_A.public_key.to_bytes().end(), AD.begin());
 	std::copy(identity_key_B.public_key.to_bytes().begin(), identity_key_B.public_key.to_bytes().end(), AD.begin() + 32);
+
+	std::vector<uint8_t> plaintext = {'H', 'e', 'l', 'l', 'o'};
+
+	Ratchet::State A_state = Ratchet::State::Init_alice(SK_A, identity_key_B.public_key);
+	Ratchet::State B_state = Ratchet::State::Init_bob(SK_B, identity_key_B);
+
+	std::pair<Ratchet::Header, std::vector<uint8_t>> encryption_result = A_state.encrypt(plaintext, AD);
+
+	std::vector<uint8_t> received = B_state.decrypt(encryption_result.first, encryption_result.second, AD);
+
+	for(size_t i = 0; i < received.size(); ++i) {
+		std::cout << received[i] << std::endl;
+	}
 }

@@ -111,7 +111,9 @@ namespace Ratchet {
 	State Ratchet::State::Init_alice(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
 		State state{ KeyPair::Generate() };
 		
-		std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(state.RK.value(), state.CK_sender.value()) = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
+		std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>> kdf_rk_result = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
+		state.RK = std::make_optional(kdf_rk_result.first);
+		state.CK_sender = std::make_optional(kdf_rk_result.second);
 		state.DH_receiver = std::move(bob_public_key);
 
 		return state;
