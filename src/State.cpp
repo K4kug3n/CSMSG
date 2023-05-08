@@ -90,30 +90,30 @@ namespace Ratchet {
 
 		skip_message_keys(header.message_nb);
 
-		std::array<uint8_t, 32> mk;
-		std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(CK_receiver.value(), mk) = KDF_CK(CK_receiver.value());
+		KdfCkResult kdf_ck_result = KDF_CK(CK_receiver.value());
+		CK_receiver = std::make_optional(kdf_ck_result.chain_key);
 		N_receiver += 1;
 
-		return decrypt_algo(mk, ciphertext, Header::Concatenate(AD, header));
+		return decrypt_algo(kdf_ck_result.message_key, ciphertext, Header::Concatenate(AD, header));
 	}
 
 	std::pair<Header, std::vector<uint8_t>> State::encrypt(const std::vector<uint8_t>& plaintext, const std::array<uint8_t, 64>& AD) {
-		std::array<uint8_t, 32> mk;
-		std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(CK_sender.value(), mk) = KDF_CK(CK_sender.value());
+		KdfCkResult kdf_ck_result = KDF_CK(CK_sender.value());
+		CK_sender = std::make_optional(kdf_ck_result.chain_key);
 
 		Header header{ DH_sender, PN, N_sender };
 
 		N_sender += 1;
 
-		return std::pair<Header, std::vector<uint8_t>>{ header, encrypt_algo(mk, plaintext, Header::Concatenate(AD, header)) };
+		return std::pair<Header, std::vector<uint8_t>>{ header, encrypt_algo(kdf_ck_result.message_key, plaintext, Header::Concatenate(AD, header)) };
 	}
 
 	State Ratchet::State::Init_alice(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
 		State state{ KeyPair::Generate() };
 		
-		std::pair<std::array<uint8_t, 32>, std::array<uint8_t, 32>> kdf_rk_result = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
-		state.RK = std::make_optional(kdf_rk_result.first);
-		state.CK_sender = std::make_optional(kdf_rk_result.second);
+		KdfRkResult kdf_rk_result = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
+		state.RK = std::make_optional(kdf_rk_result.root_key);
+		state.CK_sender = std::make_optional(kdf_rk_result.chain_key);
 		state.DH_receiver = std::move(bob_public_key);
 
 		return state;
@@ -127,13 +127,21 @@ namespace Ratchet {
 	}
 
 	void State::dh_ratchet(const Header& header) {
+		// Doubt
 		PN = N_sender;
 		N_sender = 0;
 		N_receiver = 0;
 		DH_receiver = header.public_key;
-		std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(RK.value(), CK_receiver.value()) = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
+
+		KdfRkResult kdf_rk_result = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
+		RK = std::make_optional(kdf_rk_result.root_key);
+		CK_receiver = std::make_optional(kdf_rk_result.chain_key);
+
 		DH_sender = KeyPair::Generate();
-		std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(RK.value(), CK_sender.value()) = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
+
+		kdf_rk_result = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
+		RK = std::make_optional(kdf_rk_result.root_key);
+		CK_sender = std::make_optional(kdf_rk_result.chain_key);
 	}
 
 	void State::skip_message_keys(uint8_t until) {
@@ -143,9 +151,10 @@ namespace Ratchet {
 
 		if (CK_receiver) {
 			while (N_receiver << until) {
-				std::array<uint8_t, 32> mk;
-				std::pair<std::array<uint8_t, 32>&, std::array<uint8_t, 32>&>(CK_receiver.value(), mk) = KDF_CK(CK_receiver.value());
-				MK_skipped[std::make_pair(DH_receiver.value().to_bytes(), N_receiver)] = mk;
+				KdfCkResult kdf_ck_result = KDF_CK(CK_receiver.value());
+				CK_receiver = std::make_optional(kdf_ck_result.chain_key);
+
+				MK_skipped[std::make_pair(DH_receiver.value().to_bytes(), N_receiver)] = kdf_ck_result.message_key;
 				N_receiver += 1;
 			}
 		}
