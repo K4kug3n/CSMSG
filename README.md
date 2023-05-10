@@ -24,3 +24,8 @@ SIMSG is a prototype of secure message exchange, using Signal protocol as end-to
 25/04 - 02/05 :
 - Implementation of AES-256 block encryption with Nist test vector
 - Add CBC encryption mode to AES
+- Start report
+
+02/05 - 08/05 :
+- Implementation of Double Ratchet algorithm
+- Continue report
