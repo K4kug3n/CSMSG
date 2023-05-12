@@ -6,24 +6,12 @@
 
 void main() {
 	KeyBundle key_bundle_A = KeyBundle::Generate();
-	KeyPair ephemeral_key_A = KeyPair::Generate();
-
+	
 	KeyBundle key_bundle_B = KeyBundle::Generate();
 	PreKeyBundle prekey_bundle_B = key_bundle_B.get_prekey_bundle();
 
 	// Alice side
-	std::array<uint8_t, 32> DH1_A = key_bundle_A.identity_key.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH2_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.identity_key);
-	std::array<uint8_t, 32> DH3_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH4_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.onetime_prekey.value());
-
-	std::vector<uint8_t> DH_A = std::vector<uint8_t>(128, 0);
-	std::copy(DH1_A.begin(), DH1_A.end(), DH_A.begin());
-	std::copy(DH2_A.begin(), DH2_A.end(), DH_A.begin() + 32);
-	std::copy(DH3_A.begin(), DH3_A.end(), DH_A.begin() + 64);
-	std::copy(DH4_A.begin(), DH4_A.end(), DH_A.begin() + 96);
-
-	std::array<uint8_t, 32> SK_A = KDF(DH_A);
+	std::array<uint8_t, 32> SK_A = key_bundle_A.compute_shared_secret(prekey_bundle_B);
 
 	// Bob Side 
 	//std::array<uint8_t, 32> DH1_B = prekey_bundle_B.prekey.compute_key_agreement(identity_key_A);

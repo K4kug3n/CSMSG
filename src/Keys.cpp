@@ -3,6 +3,7 @@
 #include <CurveX25519.hpp>
 #include <XEdDSA.hpp>
 #include <Utility.hpp>
+#include <KDF.hpp>
 
 PublicKey::PublicKey(std::array<uint8_t, 32> bytes) :
 	m_repr(std::move(bytes)) { }
@@ -105,8 +106,8 @@ KeyBundle KeyBundle::Generate() {
 	KeyPair identity_key = KeyPair::Generate();
 	KeyPair prekey = KeyPair::Generate();
 
-	const std::array<uint8_t, 32> prekey_bytes = prekey.public_key.to_bytes();
-	const std::array<uint8_t, 64> prekey_signature = identity_key.private_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
+	std::array<uint8_t, 32> prekey_bytes = prekey.public_key.to_bytes();
+	std::array<uint8_t, 64> prekey_signature = identity_key.private_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
 
 	std::vector<KeyPair> onetime_prekeys;
 	for(size_t i = 0; i < 3; ++i) {
@@ -120,6 +121,27 @@ KeyBundle::KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> p
 	identity_key(std::move(identity)), prekey(std::move(prekey)),
 	prekey_signature(std::move(prekey_signature)), onetime_prekeys(std::move(onetime_keys)),
 	m_used_onetime_prekeys() { }
+
+std::array<uint8_t, 32> KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
+	// X3DH protocol 
+	KeyPair ephemeral_key = KeyPair::Generate();
+
+	std::array<uint8_t, 32> DH1 = identity_key.compute_key_agreement(prekey_bundle.prekey);
+	std::array<uint8_t, 32> DH2 = ephemeral_key.compute_key_agreement(prekey_bundle.identity_key);
+	std::array<uint8_t, 32> DH3 = ephemeral_key.compute_key_agreement(prekey_bundle.prekey);
+
+	std::vector<uint8_t> DH = std::vector<uint8_t>(96, 0);
+	std::copy(DH1.begin(), DH1.end(), DH.begin());
+	std::copy(DH2.begin(), DH2.end(), DH.begin() + 32);
+	std::copy(DH3.begin(), DH3.end(), DH.begin() + 64);
+
+	if(prekey_bundle.onetime_prekey) {
+		std::array<uint8_t, 32> DH4 = ephemeral_key.compute_key_agreement(prekey_bundle.onetime_prekey.value());
+		DH.insert(DH.end(), DH4.begin(), DH4.end());
+	}
+
+	return KDF(DH);
+}
 
 PreKeyBundle KeyBundle::get_prekey_bundle() {	
 	PublicKey public_identity_key = identity_key.public_key;
