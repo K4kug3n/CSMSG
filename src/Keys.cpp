@@ -101,9 +101,42 @@ KeyPair KeyPair::Generate() {
 	return KeyPair{ std::move(priv), std::move(pub) };
 }
 
-PreKeyBundle::PreKeyBundle(const KeyPair& identity_key) :
-	prekey(KeyPair::Generate()), one_time_prekey(KeyPair::Generate()) {
-	const std::array<uint8_t, 32> prekey_bytes = prekey.public_key.to_bytes();
+KeyBundle KeyBundle::Generate() {
+	KeyPair identity_key = KeyPair::Generate();
+	KeyPair prekey = KeyPair::Generate();
 
-	prekey_signature = identity_key.private_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
+	const std::array<uint8_t, 32> prekey_bytes = prekey.public_key.to_bytes();
+	const std::array<uint8_t, 64> prekey_signature = identity_key.private_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
+
+	std::vector<KeyPair> onetime_prekeys;
+	for(size_t i = 0; i < 3; ++i) {
+		onetime_prekeys.push_back(KeyPair::Generate());
+	}
+
+	return KeyBundle{ std::move(identity_key), std::move(prekey) , std::move(prekey_signature) , std::move(onetime_prekeys) };
 }
+
+KeyBundle::KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> prekey_signature, std::vector<KeyPair> onetime_keys) :
+	identity_key(std::move(identity)), prekey(std::move(prekey)),
+	prekey_signature(std::move(prekey_signature)), onetime_prekeys(std::move(onetime_keys)),
+	m_used_onetime_prekeys() { }
+
+PreKeyBundle KeyBundle::get_prekey_bundle() {	
+	PublicKey public_identity_key = identity_key.public_key;
+	PublicKey public_prekey = prekey.public_key;
+	
+	std::optional<PublicKey> public_onetime_prekey = std::nullopt;
+	if(!onetime_prekeys.empty()) {
+		KeyPair& onetime_prekey = onetime_prekeys.back();
+		public_onetime_prekey = std::make_optional(onetime_prekey.public_key);
+		
+		m_used_onetime_prekeys.push_back(onetime_prekey);
+		onetime_prekeys.pop_back();
+	}
+	
+	return PreKeyBundle{ identity_key.public_key, prekey.public_key, prekey_signature, std::move(public_onetime_prekey) };
+}
+
+PreKeyBundle::PreKeyBundle(PublicKey identity, PublicKey prekey, std::array<uint8_t, 64> prekey_signature, std::optional<PublicKey> onetime_key) :
+	identity_key(std::move(identity)), prekey(std::move(prekey)),
+	prekey_signature(std::move(prekey_signature)), onetime_prekey(std::move(onetime_key)) { }

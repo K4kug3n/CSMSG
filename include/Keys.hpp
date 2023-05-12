@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <ostream>
+#include <optional>
 
 class PublicKey {
 public:
@@ -74,31 +75,47 @@ public:
 	friend bool operator!=(const KeyPair& lhs, const KeyPair& rhs);
 };
 
-//class KeyBundle {
-//public:
-//	KeyBundle() = delete;
-//	KeyBundle(const KeyBundle&) = default;
-//	KeyBundle(KeyBundle&&) = default;
-//	~KeyBundle() = default;
-//
-//	KeyBundle& operator=(const KeyBundle&) = default;
-//	KeyBundle& operator=(KeyBundle&&) = default;
-//};
-
 class PreKeyBundle {
 public:
 	PreKeyBundle() = delete;
-	PreKeyBundle(const KeyPair& identity_key);
+	PreKeyBundle(PublicKey identity, PublicKey prekey, std::array<uint8_t, 64> prekey_signature, std::optional<PublicKey> onetime_key);
 	PreKeyBundle(const PreKeyBundle&) = default;
 	PreKeyBundle(PreKeyBundle&&) = default;
 	~PreKeyBundle() = default;
 
-	KeyPair prekey;
+	PublicKey identity_key;
+	PublicKey prekey;
 	std::array<uint8_t, 64> prekey_signature;
-	KeyPair one_time_prekey;
+	std::optional<PublicKey> onetime_prekey;
 
 	PreKeyBundle& operator=(const PreKeyBundle&) = default;
 	PreKeyBundle& operator=(PreKeyBundle&&) = default;
+};
+
+class KeyBundle {
+public:
+	KeyBundle() = delete;
+	KeyBundle(const KeyBundle&) = default;
+	KeyBundle(KeyBundle&&) = default;
+	~KeyBundle() = default;
+
+	KeyPair identity_key;
+	KeyPair prekey;
+	std::array<uint8_t, 64> prekey_signature;
+	std::vector<KeyPair> onetime_prekeys;	
+
+	//compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
+	PreKeyBundle get_prekey_bundle();
+
+	static KeyBundle Generate();
+
+	KeyBundle& operator=(const KeyBundle&) = default;
+	KeyBundle& operator=(KeyBundle&&) = default;
+
+private:
+	KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> prekey_signature, std::vector<KeyPair> onetime_keys);
+
+	std::vector<KeyPair> m_used_onetime_prekeys;
 };
 
 #endif
