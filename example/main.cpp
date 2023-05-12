@@ -5,19 +5,17 @@
 #include <State.hpp>
 
 void main() {
-	KeyPair identity_key_A = KeyPair::Generate();
+	KeyBundle key_bundle_A = KeyBundle::Generate();
 	KeyPair ephemeral_key_A = KeyPair::Generate();
-	PreKeyBundle prekey_bundle_A{ identity_key_A };
 
-	KeyPair identity_key_B = KeyPair::Generate();
-	KeyPair ephemeral_key_B = KeyPair::Generate();
-	PreKeyBundle prekey_bundle_B{ identity_key_B };
+	KeyBundle key_bundle_B = KeyBundle::Generate();
+	PreKeyBundle prekey_bundle_B = key_bundle_B.get_prekey_bundle();
 
 	// Alice side
-	std::array<uint8_t, 32> DH1_A = identity_key_A.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH2_A = ephemeral_key_A.compute_key_agreement(identity_key_B);
+	std::array<uint8_t, 32> DH1_A = key_bundle_A.identity_key.compute_key_agreement(prekey_bundle_B.prekey);
+	std::array<uint8_t, 32> DH2_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.identity_key);
 	std::array<uint8_t, 32> DH3_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.prekey);
-	std::array<uint8_t, 32> DH4_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.one_time_prekey);
+	std::array<uint8_t, 32> DH4_A = ephemeral_key_A.compute_key_agreement(prekey_bundle_B.onetime_prekey.value());
 
 	std::vector<uint8_t> DH_A = std::vector<uint8_t>(128, 0);
 	std::copy(DH1_A.begin(), DH1_A.end(), DH_A.begin());
@@ -28,29 +26,27 @@ void main() {
 	std::array<uint8_t, 32> SK_A = KDF(DH_A);
 
 	// Bob Side 
-	std::array<uint8_t, 32> DH1_B = prekey_bundle_B.prekey.compute_key_agreement(identity_key_A);
-	std::array<uint8_t, 32> DH2_B = identity_key_B.compute_key_agreement(ephemeral_key_A);
-	std::array<uint8_t, 32> DH3_B = prekey_bundle_B.prekey.compute_key_agreement(ephemeral_key_A);
-	std::array<uint8_t, 32> DH4_B = prekey_bundle_B.one_time_prekey.compute_key_agreement(ephemeral_key_A);
+	//std::array<uint8_t, 32> DH1_B = prekey_bundle_B.prekey.compute_key_agreement(identity_key_A);
+	//std::array<uint8_t, 32> DH2_B = identity_key_B.compute_key_agreement(ephemeral_key_A);
+	//std::array<uint8_t, 32> DH3_B = prekey_bundle_B.prekey.compute_key_agreement(ephemeral_key_A);
+	//std::array<uint8_t, 32> DH4_B = prekey_bundle_B.one_time_prekey.compute_key_agreement(ephemeral_key_A);
 
-	std::vector<uint8_t> DH_B = std::vector<uint8_t>(128, 0);
+	/*std::vector<uint8_t> DH_B = std::vector<uint8_t>(128, 0);
 	std::copy(DH1_B.begin(), DH1_B.end(), DH_B.begin());
 	std::copy(DH2_B.begin(), DH2_B.end(), DH_B.begin() + 32);
 	std::copy(DH3_B.begin(), DH3_B.end(), DH_B.begin() + 64);
 	std::copy(DH4_B.begin(), DH4_B.end(), DH_B.begin() + 96);
 
-	std::array<uint8_t, 32> SK_B = KDF(DH_B);
-
-	std::cout << (SK_A == SK_B) << " " << true << std::endl;
+	std::array<uint8_t, 32> SK_B = KDF(DH_B);*/
 
 	std::array<uint8_t, 64> AD;
-	std::copy(identity_key_A.public_key.to_bytes().begin(), identity_key_A.public_key.to_bytes().end(), AD.begin());
-	std::copy(identity_key_B.public_key.to_bytes().begin(), identity_key_B.public_key.to_bytes().end(), AD.begin() + 32);
+	std::copy(key_bundle_A.identity_key.public_key.to_bytes().begin(), key_bundle_A.identity_key.public_key.to_bytes().end(), AD.begin());
+	std::copy(key_bundle_B.identity_key.public_key.to_bytes().begin(), key_bundle_B.identity_key.public_key.to_bytes().end(), AD.begin() + 32);
 
 	std::vector<uint8_t> plaintext = {'H', 'e', 'l', 'l', 'o'};
 
-	Ratchet::State A_state = Ratchet::State::Init_alice(SK_A, identity_key_B.public_key);
-	Ratchet::State B_state = Ratchet::State::Init_bob(SK_B, identity_key_B);
+	Ratchet::State A_state = Ratchet::State::Init_alice(SK_A, key_bundle_B.identity_key.public_key);
+	Ratchet::State B_state = Ratchet::State::Init_bob(SK_A /*SK_B*/, key_bundle_B.identity_key);
 
 	std::pair<Ratchet::Header, std::vector<uint8_t>> encryption_result = A_state.encrypt(plaintext, AD);
 
