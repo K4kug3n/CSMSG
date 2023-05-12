@@ -104,7 +104,7 @@ public:
 	std::array<uint8_t, 64> prekey_signature;
 	std::vector<KeyPair> onetime_prekeys;	
 
-	//compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
+	std::array<uint8_t, 32> compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
 	PreKeyBundle get_prekey_bundle();
 
 	static KeyBundle Generate();
