@@ -2,6 +2,13 @@
 
 SIMSG is a prototype of secure message exchange, using Signal protocol as end-to-end encryption, for the course of Advanced Security from University of Geneva.
 
+## Build
+
+This project use CMake as a project generator. To generate, use :
+> cmake build
+
+Then use the generate file for your compiler to build the project
+
 ## External library
 
 - Boost multiprecision for integer with more than 64bits
@@ -26,6 +33,11 @@ SIMSG is a prototype of secure message exchange, using Signal protocol as end-to
 - Add CBC encryption mode to AES
 - Start report
 
-02/05 - 08/05 :
+02/05 - 09/05 :
 - Implementation of Double Ratchet algorithm
 - Continue report
+
+09/05 - 16/05 :
+- Finalize report
+- Add initial message notion
+- Finalize implementation
