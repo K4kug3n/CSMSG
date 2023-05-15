@@ -1,5 +1,5 @@
-#ifndef CSMSG_SHA512_HPP
-#define CSMSG_SHA512_HPP
+#ifndef CSMSG_SHA_HPP
+#define CSMSG_SHA_HPP
 
 #include <vector>
 #include <array>

@@ -1,4 +1,4 @@
-#include <SHA512.hpp>
+#include <SHA.hpp>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
