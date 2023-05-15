@@ -1,6 +1,6 @@
 #include <XEdDSA.hpp>
 
-#include <SHA512.hpp>
+#include <SHA.hpp>
 #include <Utility.hpp>
 #include <CurveX25519.hpp>
 #include <Edward.hpp>

@@ -1,6 +1,6 @@
 #include <Edward.hpp>
 
-#include <SHA512.hpp>
+#include <SHA.hpp>
 #include <Utility.hpp>
 #include <Field.hpp>
 #include <exception>
