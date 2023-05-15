@@ -92,6 +92,8 @@ public:
 	PreKeyBundle& operator=(PreKeyBundle&&) = default;
 };
 
+struct X3DHResult;
+
 class KeyBundle {
 public:
 	KeyBundle() = delete;
@@ -104,7 +106,7 @@ public:
 	std::array<uint8_t, 64> prekey_signature;
 	std::vector<KeyPair> onetime_prekeys;	
 
-	std::array<uint8_t, 32> compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
+	X3DHResult compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
 	PreKeyBundle get_prekey_bundle();
 
 	static KeyBundle Generate();
