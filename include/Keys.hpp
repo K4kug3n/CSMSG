@@ -92,7 +92,9 @@ public:
 	PreKeyBundle& operator=(PreKeyBundle&&) = default;
 };
 
-struct X3DHResult;
+struct SenderX3DHResult;
+struct ReceiverX3DHResult;
+class InitialMessage;
 
 class KeyBundle {
 public:
@@ -106,7 +108,8 @@ public:
 	std::array<uint8_t, 64> prekey_signature;
 	std::vector<KeyPair> onetime_prekeys;	
 
-	X3DHResult compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
+	SenderX3DHResult compute_shared_secret(const PreKeyBundle& prekey_bundle) const;
+	ReceiverX3DHResult compute_shared_secret(const InitialMessage& intial_message);
 	PreKeyBundle get_prekey_bundle();
 
 	static KeyBundle Generate();
@@ -116,6 +119,7 @@ public:
 
 private:
 	KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> prekey_signature, std::vector<KeyPair> onetime_keys);
+	KeyPair find_used_onetime_prekeys(const PublicKey& used_onetime_public_key);
 
 	std::vector<KeyPair> m_used_onetime_prekeys;
 };

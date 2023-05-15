@@ -123,7 +123,17 @@ KeyBundle::KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> p
 	prekey_signature(std::move(prekey_signature)), onetime_prekeys(std::move(onetime_keys)),
 	m_used_onetime_prekeys() { }
 
-X3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
+KeyPair KeyBundle::find_used_onetime_prekeys(const PublicKey& used_onetime_public_key) {
+	for (const auto key_pair : m_used_onetime_prekeys) {
+		if (key_pair.public_key == used_onetime_public_key) {
+			return key_pair;
+		}
+	}
+
+	throw std::runtime_error("onetime prekey not marked used");
+}
+
+SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
 	// X3DH protocol 
 	KeyPair ephemeral_key = KeyPair::Generate();
 
@@ -145,7 +155,31 @@ X3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) c
 	std::copy(identity_key.public_key.to_bytes().begin(), identity_key.public_key.to_bytes().end(), AD.begin());
 	std::copy(prekey_bundle.identity_key.to_bytes().begin(), prekey_bundle.identity_key.to_bytes().end(), AD.begin() + 32);
 
-	return X3DHResult{ KDF(DH), std::move(AD), std::move(ephemeral_key.public_key) };
+	return SenderX3DHResult{ KDF(DH), std::move(AD), std::move(ephemeral_key.public_key) };
+}
+
+ReceiverX3DHResult KeyBundle::compute_shared_secret(const InitialMessage& intial_message) {
+	std::array<uint8_t, 32> DH1 = prekey.compute_key_agreement(intial_message.identity_key);
+	std::array<uint8_t, 32> DH2 = identity_key.compute_key_agreement(intial_message.ephemeral_key);
+	std::array<uint8_t, 32> DH3 = prekey.compute_key_agreement(intial_message.ephemeral_key);
+	
+	std::vector<uint8_t> DH = std::vector<uint8_t>(96, 0);
+	std::copy(DH1.begin(), DH1.end(), DH.begin());
+	std::copy(DH2.begin(), DH2.end(), DH.begin() + 32);
+	std::copy(DH3.begin(), DH3.end(), DH.begin() + 64);
+
+	if (intial_message.used_onetime_prekey) {
+		KeyPair used_onetime_prekey = find_used_onetime_prekeys(intial_message.used_onetime_prekey.value());
+
+		std::array<uint8_t, 32> DH4 = used_onetime_prekey.compute_key_agreement(intial_message.ephemeral_key);
+		DH.insert(DH.end(), DH4.begin(), DH4.end());
+	}
+
+	std::array<uint8_t, 64> AD;
+	std::copy(intial_message.identity_key.to_bytes().begin(), intial_message.identity_key.to_bytes().end(), AD.begin());
+	std::copy(identity_key.public_key.to_bytes().begin(), identity_key.public_key.to_bytes().end(), AD.begin() + 32);
+
+	return ReceiverX3DHResult{ KDF(DH), std::move(AD) };
 }
 
 PreKeyBundle KeyBundle::get_prekey_bundle() {	
