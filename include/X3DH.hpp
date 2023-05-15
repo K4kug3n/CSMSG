@@ -3,7 +3,7 @@
 
 #include <array>
 #include <Keys.hpp>
-#include <State.hpp>
+#include <Ratchet.hpp>
 
 struct SenderX3DHResult {
 	std::array<uint8_t, 32> shared_key;

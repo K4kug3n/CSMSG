@@ -1,4 +1,4 @@
-#include <State.hpp>
+#include <Ratchet.hpp>
 
 #include <cassert>
 
@@ -108,7 +108,7 @@ namespace Ratchet {
 		return EncryptedMessage{ header, encrypt_algo(kdf_ck_result.message_key, plaintext, Header::Concatenate(AD, header)) };
 	}
 
-	State Ratchet::State::Init_alice(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
+	State Ratchet::State::Init_sender(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
 		State state{ KeyPair::Generate() };
 		
 		KdfRkResult kdf_rk_result = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
@@ -119,7 +119,7 @@ namespace Ratchet {
 		return state;
 	}
 
-	State Ratchet::State::Init_bob(std::array<uint8_t, 32> SK, KeyPair bob_key_pair) {
+	State Ratchet::State::Init_receiver(std::array<uint8_t, 32> SK, KeyPair bob_key_pair) {
 		State state{ std::move(bob_key_pair) };
 		state.RK = std::move(SK);
 
