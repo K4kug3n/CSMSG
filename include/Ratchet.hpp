@@ -45,8 +45,8 @@ namespace Ratchet {
 
 		std::map<std::pair<std::array<uint8_t, 32>, uint8_t>, std::array<uint8_t, 32>> MK_skipped;
 
-		static State Init_alice(std::array<uint8_t, 32> SK, PublicKey bob_public_key);
-		static State Init_bob(std::array<uint8_t, 32> SK, KeyPair bob_key_pair);
+		static State Init_sender(std::array<uint8_t, 32> SK, PublicKey bob_public_key);
+		static State Init_receiver(std::array<uint8_t, 32> SK, KeyPair bob_key_pair);
 		static constexpr uint8_t MAX_SKIP = 10;
 
 	private:
