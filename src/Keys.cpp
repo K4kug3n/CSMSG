@@ -137,9 +137,9 @@ SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bun
 	// X3DH protocol 
 	KeyPair ephemeral_key = KeyPair::Generate();
 
-	std::array<uint8_t, 32> DH1 = identity_key.compute_key_agreement(prekey_bundle.prekey);
-	std::array<uint8_t, 32> DH2 = ephemeral_key.compute_key_agreement(prekey_bundle.identity_key);
-	std::array<uint8_t, 32> DH3 = ephemeral_key.compute_key_agreement(prekey_bundle.prekey);
+	const std::array<uint8_t, 32> DH1 = identity_key.compute_key_agreement(prekey_bundle.prekey);
+	const std::array<uint8_t, 32> DH2 = ephemeral_key.compute_key_agreement(prekey_bundle.identity_key);
+	const std::array<uint8_t, 32> DH3 = ephemeral_key.compute_key_agreement(prekey_bundle.prekey);
 
 	std::vector<uint8_t> DH = std::vector<uint8_t>(96, 0);
 	std::copy(DH1.begin(), DH1.end(), DH.begin());
@@ -147,7 +147,7 @@ SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bun
 	std::copy(DH3.begin(), DH3.end(), DH.begin() + 64);
 
 	if(prekey_bundle.onetime_prekey) {
-		std::array<uint8_t, 32> DH4 = ephemeral_key.compute_key_agreement(prekey_bundle.onetime_prekey.value());
+		const std::array<uint8_t, 32> DH4 = ephemeral_key.compute_key_agreement(prekey_bundle.onetime_prekey.value());
 		DH.insert(DH.end(), DH4.begin(), DH4.end());
 	}
 
@@ -159,9 +159,10 @@ SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bun
 }
 
 ReceiverX3DHResult KeyBundle::compute_shared_secret(const InitialMessage& intial_message) {
-	std::array<uint8_t, 32> DH1 = prekey.compute_key_agreement(intial_message.identity_key);
-	std::array<uint8_t, 32> DH2 = identity_key.compute_key_agreement(intial_message.ephemeral_key);
-	std::array<uint8_t, 32> DH3 = prekey.compute_key_agreement(intial_message.ephemeral_key);
+	// X3DH protocol 
+	const std::array<uint8_t, 32> DH1 = prekey.compute_key_agreement(intial_message.identity_key);
+	const std::array<uint8_t, 32> DH2 = identity_key.compute_key_agreement(intial_message.ephemeral_key);
+	const std::array<uint8_t, 32> DH3 = prekey.compute_key_agreement(intial_message.ephemeral_key);
 	
 	std::vector<uint8_t> DH = std::vector<uint8_t>(96, 0);
 	std::copy(DH1.begin(), DH1.end(), DH.begin());
@@ -169,9 +170,9 @@ ReceiverX3DHResult KeyBundle::compute_shared_secret(const InitialMessage& intial
 	std::copy(DH3.begin(), DH3.end(), DH.begin() + 64);
 
 	if (intial_message.used_onetime_prekey) {
-		KeyPair used_onetime_prekey = find_used_onetime_prekeys(intial_message.used_onetime_prekey.value());
+		const KeyPair used_onetime_prekey = find_used_onetime_prekeys(intial_message.used_onetime_prekey.value());
 
-		std::array<uint8_t, 32> DH4 = used_onetime_prekey.compute_key_agreement(intial_message.ephemeral_key);
+		const std::array<uint8_t, 32> DH4 = used_onetime_prekey.compute_key_agreement(intial_message.ephemeral_key);
 		DH.insert(DH.end(), DH4.begin(), DH4.end());
 	}
 
