@@ -8,7 +8,6 @@
 #include <map>
 
 namespace Ratchet {
-
 	class Header {
 	public:
 		Header(const KeyPair& dh_pair, uint8_t pn, uint8_t n);
@@ -20,13 +19,18 @@ namespace Ratchet {
 		uint8_t message_nb;
 	};
 
+	struct EncryptedMessage {
+		Header header;
+		std::vector<uint8_t> ciphertext;
+	};
+
 	class State {
 	public:
 		State() = delete;
 		State(KeyPair DH_sender);
 
-		std::vector<uint8_t> decrypt(const Header& header, const std::vector<uint8_t>& complete_ciphertext, const std::array<uint8_t, 64>& AD);
-		std::pair<Header, std::vector<uint8_t>> encrypt(const std::vector<uint8_t>& plaintext, const std::array<uint8_t, 64>& AD);
+		std::vector<uint8_t> decrypt(const EncryptedMessage& message, const std::array<uint8_t, 64>& AD);
+		EncryptedMessage encrypt(const std::vector<uint8_t>& plaintext, const std::array<uint8_t, 64>& AD);
 
 		KeyPair DH_sender;
 		std::optional<PublicKey> DH_receiver;

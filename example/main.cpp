@@ -2,6 +2,7 @@
 
 #include <Keys.hpp>
 #include <KDF.hpp>
+#include <X3DH.hpp>
 #include <State.hpp>
 
 void main() {
@@ -11,7 +12,7 @@ void main() {
 	PreKeyBundle prekey_bundle_B = key_bundle_B.get_prekey_bundle();
 
 	// Alice side
-	std::array<uint8_t, 32> SK_A = key_bundle_A.compute_shared_secret(prekey_bundle_B);
+	X3DHResult secret_A = key_bundle_A.compute_shared_secret(prekey_bundle_B);
 
 	// Bob Side 
 	//std::array<uint8_t, 32> DH1_B = prekey_bundle_B.prekey.compute_key_agreement(identity_key_A);
@@ -27,18 +28,14 @@ void main() {
 
 	std::array<uint8_t, 32> SK_B = KDF(DH_B);*/
 
-	std::array<uint8_t, 64> AD;
-	std::copy(key_bundle_A.identity_key.public_key.to_bytes().begin(), key_bundle_A.identity_key.public_key.to_bytes().end(), AD.begin());
-	std::copy(key_bundle_B.identity_key.public_key.to_bytes().begin(), key_bundle_B.identity_key.public_key.to_bytes().end(), AD.begin() + 32);
-
 	std::vector<uint8_t> plaintext = {'H', 'e', 'l', 'l', 'o'};
 
-	Ratchet::State A_state = Ratchet::State::Init_alice(SK_A, key_bundle_B.identity_key.public_key);
-	Ratchet::State B_state = Ratchet::State::Init_bob(SK_A /*SK_B*/, key_bundle_B.identity_key);
+	Ratchet::State A_state = Ratchet::State::Init_alice(secret_A.shared_key, key_bundle_B.identity_key.public_key);
+	Ratchet::State B_state = Ratchet::State::Init_bob(secret_A.shared_key /*SK_B*/, key_bundle_B.identity_key);
 
-	std::pair<Ratchet::Header, std::vector<uint8_t>> encryption_result = A_state.encrypt(plaintext, AD);
+	Ratchet::EncryptedMessage encrypted_msg = A_state.encrypt(plaintext, secret_A.additional_data);
 
-	std::vector<uint8_t> received = B_state.decrypt(encryption_result.first, encryption_result.second, AD);
+	std::vector<uint8_t> received = B_state.decrypt(encrypted_msg, secret_A.additional_data);
 
 	for(size_t i = 0; i < received.size(); ++i) {
 		std::cout << received[i] << std::endl;

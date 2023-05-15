@@ -2,6 +2,7 @@
 
 #include <CurveX25519.hpp>
 #include <XEdDSA.hpp>
+#include <X3DH.hpp>
 #include <Utility.hpp>
 #include <KDF.hpp>
 
@@ -122,7 +123,7 @@ KeyBundle::KeyBundle(KeyPair identity, KeyPair prekey, std::array<uint8_t, 64> p
 	prekey_signature(std::move(prekey_signature)), onetime_prekeys(std::move(onetime_keys)),
 	m_used_onetime_prekeys() { }
 
-std::array<uint8_t, 32> KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
+X3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
 	// X3DH protocol 
 	KeyPair ephemeral_key = KeyPair::Generate();
 
@@ -140,7 +141,11 @@ std::array<uint8_t, 32> KeyBundle::compute_shared_secret(const PreKeyBundle& pre
 		DH.insert(DH.end(), DH4.begin(), DH4.end());
 	}
 
-	return KDF(DH);
+	std::array<uint8_t, 64> AD;
+	std::copy(identity_key.public_key.to_bytes().begin(), identity_key.public_key.to_bytes().end(), AD.begin());
+	std::copy(prekey_bundle.identity_key.to_bytes().begin(), prekey_bundle.identity_key.to_bytes().end(), AD.begin() + 32);
+
+	return X3DHResult{ KDF(DH), std::move(AD), std::move(ephemeral_key.public_key) };
 }
 
 PreKeyBundle KeyBundle::get_prekey_bundle() {	
