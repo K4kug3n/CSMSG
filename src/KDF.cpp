@@ -46,7 +46,7 @@ std::vector<uint8_t> HKDF_expand(const std::array<uint8_t, 64>& PRK, const std::
 	std::vector<uint8_t> T_prev;
 	for (size_t i = 1; i <= N; ++i) {
 		T_prev.insert(T_prev.end(), info.begin(), info.end());
-		T_prev.push_back(i);
+		T_prev.push_back(static_cast<uint8_t>(i));
 
 		std::array<uint8_t, 64> T_i = HMAC_512({ PRK.begin(), PRK.end() }, T_prev);
 		T.insert(T.end(), T_i.begin(), T_i.end());
