@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <SHA512.hpp>
+#include <SHA.hpp>
 
 TEST_CASE("SHA512", "[SHA512]") {
 	SECTION("Test Vector 1") {
