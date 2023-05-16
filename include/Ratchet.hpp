@@ -1,5 +1,5 @@
-#ifndef CSMSG_RATCHET_STATE_HPP
-#define CSMSG_RATCHET_STATE_HPP
+#ifndef CSMSG_RATCHET_HPP
+#define CSMSG_RATCHET_HPP
 
 #include <Keys.hpp>
 
@@ -56,4 +56,4 @@ namespace Ratchet {
 	};
 }
 
-#endif CSMSG_RATCHET_STATE_HPP
+#endif

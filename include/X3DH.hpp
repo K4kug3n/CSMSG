@@ -1,5 +1,5 @@
-#ifndef CSMSG_RATCHET_X3DH_HPP
-#define CSMSG_RATCHET_X3DH_HPP
+#ifndef CSMSG_X3DH_HPP
+#define CSMSG_X3DH_HPP
 
 #include <array>
 #include <Keys.hpp>
@@ -28,4 +28,4 @@ public:
 	Ratchet::EncryptedMessage message;
 };
 
-#endif CSMSG_RATCHET_X3DH_HPP
+#endif

@@ -12,4 +12,4 @@ std::vector<uint8_t> CBC_AES_encryption(const std::vector<uint8_t>& msg, const s
 
 std::vector<uint8_t> CBC_AES_decryption(const std::vector<uint8_t>& cyphertext, const std::array<uint8_t, 32>& key);
 
-#endif CSMSG_AES_HPP
+#endif
