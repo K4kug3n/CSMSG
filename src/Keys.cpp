@@ -62,7 +62,7 @@ bool operator!=(const PrivateKey& lhs, const PrivateKey& rhs) {
 }
 
 bool operator==(const KeyPair& lhs, const KeyPair& rhs) {
-	return (lhs.private_key == rhs.private_key) && (lhs.public_key == rhs.public_key);
+	return (lhs.m_private_key == rhs.m_private_key) && (lhs.public_key == rhs.public_key);
 }
 
 bool operator!=(const KeyPair& lhs, const KeyPair& rhs) {
@@ -86,14 +86,18 @@ bool operator!=(const PublicKey& lhs, const PublicKey& rhs) {
 }
 
 KeyPair::KeyPair(PrivateKey priv, PublicKey pub) :
-	private_key(std::move(priv)), public_key(std::move(pub)) { }
+	m_private_key(std::move(priv)), public_key(std::move(pub)) { }
 
 std::array<uint8_t, 32> KeyPair::compute_key_agreement(const KeyPair& key) const {
-	return private_key.compute_key_agreement(key.public_key);
+	return m_private_key.compute_key_agreement(key.public_key);
 }
 
 std::array<uint8_t, 32> KeyPair::compute_key_agreement(const PublicKey& key) const {
-	return private_key.compute_key_agreement(key);
+	return m_private_key.compute_key_agreement(key);
+}
+
+std::array<uint8_t, 64> KeyPair::compute_signature(const std::vector<uint8_t>& msg) const {
+	return m_private_key.compute_signature(msg);
 }
 
 KeyPair KeyPair::Generate() {
@@ -108,7 +112,7 @@ KeyBundle KeyBundle::Generate() {
 	KeyPair prekey = KeyPair::Generate();
 
 	std::array<uint8_t, 32> prekey_bytes = prekey.public_key.to_bytes();
-	std::array<uint8_t, 64> prekey_signature = identity_key.private_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
+	std::array<uint8_t, 64> prekey_signature = identity_key.compute_signature({ prekey_bytes.begin(), prekey_bytes.end() });
 
 	std::vector<KeyPair> onetime_prekeys;
 	for(size_t i = 0; i < 3; ++i) {

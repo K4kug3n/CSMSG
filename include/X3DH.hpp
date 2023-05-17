@@ -19,13 +19,19 @@ struct ReceiverX3DHResult {
 
 class InitialMessage {
 public:
+	InitialMessage() = delete;
 	InitialMessage(PublicKey identity_key, PublicKey ephemeral_key, const PreKeyBundle& prekey_bundle, Ratchet::EncryptedMessage message);
+	InitialMessage(const InitialMessage&) = default;
+	InitialMessage(InitialMessage&&) = default;
 
 	PublicKey identity_key;
 	PublicKey ephemeral_key;
 	std::optional<PublicKey> used_onetime_prekey;
 
 	Ratchet::EncryptedMessage message;
+
+	InitialMessage& operator=(const InitialMessage&) = default;
+	InitialMessage& operator=(InitialMessage&&) = default;
 };
 
 #endif
