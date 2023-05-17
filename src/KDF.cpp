@@ -83,7 +83,7 @@ KdfRkResult KDF_RK(const std::array<uint8_t, 32>& rk, std::array<uint8_t, 32> dh
 	std::vector<uint8_t> output = HKDF({ rk.begin(), rk.end() }, { dh_out.begin(), dh_out.end() }, { 'G', 'S', 'M', 'S', 'C' }, 64);
 	assert(output.size() == 64);
 
-	KdfRkResult result;
+	KdfRkResult result{};
 	std::copy(output.begin(), output.begin() + 32, result.root_key.begin());
 	std::copy(output.begin() + 32, output.end(), result.chain_key.begin());
 
@@ -94,7 +94,7 @@ KdfCkResult KDF_CK(const std::array<uint8_t, 32>& ck) {
 	std::array<uint8_t, 64> long_message_key = HMAC_512({ ck.begin(), ck.end() }, { 0x1 });
 	std::array<uint8_t, 64> long_next_chain_key = HMAC_512({ ck.begin(), ck.end() }, { 0x2 });
 
-	KdfCkResult result;
+	KdfCkResult result{};
 	std::copy(long_message_key.begin(), long_message_key.begin() + 32, result.message_key.begin());
 	std::copy(long_next_chain_key.begin(), long_next_chain_key.begin() + 32, result.chain_key.begin());
 

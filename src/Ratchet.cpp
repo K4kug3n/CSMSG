@@ -127,7 +127,6 @@ namespace Ratchet {
 	}
 
 	void State::dh_ratchet(const Header& header) {
-		// Doubt
 		PN = N_sender;
 		N_sender = 0;
 		N_receiver = 0;
@@ -150,7 +149,7 @@ namespace Ratchet {
 		}
 
 		if (CK_receiver) {
-			while (N_receiver << until) {
+			while (N_receiver < until) {
 				KdfCkResult kdf_ck_result = KDF_CK(CK_receiver.value());
 				CK_receiver = std::make_optional(kdf_ck_result.chain_key);
 
@@ -161,9 +160,10 @@ namespace Ratchet {
 	}
 
 	std::optional<std::vector<uint8_t>> State::try_skipped_message_keys(const Header& header, const std::vector<uint8_t>& ciphertext, const std::array<uint8_t, 64>& AD) {
-		if (MK_skipped.count(std::make_pair(header.public_key.to_bytes(), header.message_nb))) {
-			std::array<uint8_t, 32> mk = MK_skipped[std::make_pair(header.public_key.to_bytes(), header.message_nb)];
-			MK_skipped.erase(std::make_pair(header.public_key.to_bytes(), header.message_nb));
+		auto skipped_pair = std::make_pair(header.public_key.to_bytes(), header.message_nb);
+		if (MK_skipped.count(skipped_pair)) {
+			std::array<uint8_t, 32> mk = MK_skipped[skipped_pair];
+			MK_skipped.erase(skipped_pair);
 
 			return decrypt_algo(mk, ciphertext, Header::Concatenate(AD, header));
 		}
@@ -171,5 +171,3 @@ namespace Ratchet {
 		return std::nullopt;
 	}
 }
-
-

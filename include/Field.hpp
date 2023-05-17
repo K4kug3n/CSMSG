@@ -11,7 +11,7 @@ public:
 	FieldElement(std::array<uint64_t, 5> parts);
 
 	FieldElement invert() const;
-	FieldElement negative() const;
+	//FieldElement negative() const;
 	FieldElement pow2k(uint32_t k) const;
 	std::pair<FieldElement, FieldElement> pow22501() const;
 	FieldElement square() const;
