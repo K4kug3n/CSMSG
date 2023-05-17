@@ -72,11 +72,11 @@ namespace Ratchet {
 	}
 
 	State::State(KeyPair DH_sender) :
-		DH_sender(std::move(DH_sender)), DH_receiver(std::nullopt),
-		RK(std::nullopt),
-		CK_sender(std::nullopt), CK_receiver(std::nullopt),
-		N_sender(0), N_receiver(0), PN(0),
-		MK_skipped() { }
+		m_DH_self(std::move(DH_sender)), m_DH_receiver(std::nullopt),
+		m_RK(std::nullopt),
+		m_CK_sender(std::nullopt), m_CK_receiver(std::nullopt),
+		m_N_sender(0), m_N_receiver(0), m_PN(0),
+		m_MK_skipped() { }
 
 	Message State::decrypt(const EncryptedMessage& message, const std::array<uint8_t, 64>& AD) {
 		std::optional<std::vector<uint8_t>> plaintext = try_skipped_message_keys(message.header, message.ciphertext, AD);
@@ -84,16 +84,16 @@ namespace Ratchet {
 			return Message::FromBytes(plaintext.value());
 		}
 
-		if (message.header.public_key != DH_receiver.value_or(PublicKey{ std::array<uint8_t, 32>{} })) {
+		if (message.header.public_key != m_DH_receiver.value_or(PublicKey{ std::array<uint8_t, 32>{} })) {
 			skip_message_keys(message.header.previous_chain_length);
 			dh_ratchet(message.header);
 		}
 
 		skip_message_keys(message.header.message_nb);
 
-		KdfCkResult kdf_ck_result = KDF_CK(CK_receiver.value());
-		CK_receiver = std::make_optional(kdf_ck_result.chain_key);
-		N_receiver += 1;
+		KdfCkResult kdf_ck_result = KDF_CK(m_CK_receiver.value());
+		m_CK_receiver = std::make_optional(kdf_ck_result.chain_key);
+		m_N_receiver += 1;
 
 		return Message::FromBytes(
 			decrypt_algo(kdf_ck_result.message_key, message.ciphertext, Header::Concatenate(AD, message.header))
@@ -101,12 +101,12 @@ namespace Ratchet {
 	}
 
 	EncryptedMessage State::encrypt(const Message& plaintext, const std::array<uint8_t, 64>& AD) {
-		KdfCkResult kdf_ck_result = KDF_CK(CK_sender.value());
-		CK_sender = std::make_optional(kdf_ck_result.chain_key);
+		KdfCkResult kdf_ck_result = KDF_CK(m_CK_sender.value());
+		m_CK_sender = std::make_optional(kdf_ck_result.chain_key);
 
-		Header header{ DH_sender, PN, N_sender };
+		Header header{ m_DH_self, m_PN, m_N_sender };
 
-		N_sender += 1;
+		m_N_sender += 1;
 
 		return EncryptedMessage{ header, encrypt_algo(kdf_ck_result.message_key, plaintext.to_bytes(), Header::Concatenate(AD, header))};
 	}
@@ -114,59 +114,59 @@ namespace Ratchet {
 	State Ratchet::State::Init_sender(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
 		State state{ KeyPair::Generate() };
 		
-		KdfRkResult kdf_rk_result = KDF_RK(SK, state.DH_sender.compute_key_agreement(bob_public_key));
-		state.RK = std::make_optional(kdf_rk_result.root_key);
-		state.CK_sender = std::make_optional(kdf_rk_result.chain_key);
-		state.DH_receiver = std::move(bob_public_key);
+		KdfRkResult kdf_rk_result = KDF_RK(SK, state.m_DH_self.compute_key_agreement(bob_public_key));
+		state.m_RK = std::make_optional(kdf_rk_result.root_key);
+		state.m_CK_sender = std::make_optional(kdf_rk_result.chain_key);
+		state.m_DH_receiver = std::move(bob_public_key);
 
 		return state;
 	}
 
 	State Ratchet::State::Init_receiver(std::array<uint8_t, 32> SK, KeyPair bob_key_pair) {
 		State state{ std::move(bob_key_pair) };
-		state.RK = std::move(SK);
+		state.m_RK = std::move(SK);
 
 		return state;
 	}
 
 	void State::dh_ratchet(const Header& header) {
-		PN = N_sender;
-		N_sender = 0;
-		N_receiver = 0;
-		DH_receiver = header.public_key;
+		m_PN = m_N_sender;
+		m_N_sender = 0;
+		m_N_receiver = 0;
+		m_DH_receiver = header.public_key;
 
-		KdfRkResult kdf_rk_result = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
-		RK = std::make_optional(kdf_rk_result.root_key);
-		CK_receiver = std::make_optional(kdf_rk_result.chain_key);
+		KdfRkResult kdf_rk_result = KDF_RK(m_RK.value(), m_DH_self.compute_key_agreement(m_DH_receiver.value()));
+		m_RK = std::make_optional(kdf_rk_result.root_key);
+		m_CK_receiver = std::make_optional(kdf_rk_result.chain_key);
 
-		DH_sender = KeyPair::Generate();
+		m_DH_self = KeyPair::Generate();
 
-		kdf_rk_result = KDF_RK(RK.value(), DH_sender.compute_key_agreement(DH_receiver.value()));
-		RK = std::make_optional(kdf_rk_result.root_key);
-		CK_sender = std::make_optional(kdf_rk_result.chain_key);
+		kdf_rk_result = KDF_RK(m_RK.value(), m_DH_self.compute_key_agreement(m_DH_receiver.value()));
+		m_RK = std::make_optional(kdf_rk_result.root_key);
+		m_CK_sender = std::make_optional(kdf_rk_result.chain_key);
 	}
 
 	void State::skip_message_keys(uint8_t until) {
-		if (int(N_receiver) + int(MAX_SKIP) < until) {
+		if (int(m_N_receiver) + int(MAX_SKIP) < until) {
 			throw std::runtime_error("state.Nr + MAX_SKIP < until");
 		}
 
-		if (CK_receiver) {
-			while (N_receiver < until) {
-				KdfCkResult kdf_ck_result = KDF_CK(CK_receiver.value());
-				CK_receiver = std::make_optional(kdf_ck_result.chain_key);
+		if (m_CK_receiver) {
+			while (m_N_receiver < until) {
+				KdfCkResult kdf_ck_result = KDF_CK(m_CK_receiver.value());
+				m_CK_receiver = std::make_optional(kdf_ck_result.chain_key);
 
-				MK_skipped[std::make_pair(DH_receiver.value().to_bytes(), N_receiver)] = kdf_ck_result.message_key;
-				N_receiver += 1;
+				m_MK_skipped[std::make_pair(m_DH_receiver.value().to_bytes(), m_N_receiver)] = kdf_ck_result.message_key;
+				m_N_receiver += 1;
 			}
 		}
 	}
 
 	std::optional<std::vector<uint8_t>> State::try_skipped_message_keys(const Header& header, const std::vector<uint8_t>& ciphertext, const std::array<uint8_t, 64>& AD) {
 		auto skipped_pair = std::make_pair(header.public_key.to_bytes(), header.message_nb);
-		if (MK_skipped.count(skipped_pair)) {
-			std::array<uint8_t, 32> mk = MK_skipped[skipped_pair];
-			MK_skipped.erase(skipped_pair);
+		if (m_MK_skipped.count(skipped_pair)) {
+			std::array<uint8_t, 32> mk = m_MK_skipped[skipped_pair];
+			m_MK_skipped.erase(skipped_pair);
 
 			return decrypt_algo(mk, ciphertext, Header::Concatenate(AD, header));
 		}

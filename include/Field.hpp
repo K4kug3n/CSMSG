@@ -9,6 +9,8 @@ public:
 	FieldElement();
 	FieldElement(const std::array<uint8_t, 32>& bytes);
 	FieldElement(std::array<uint64_t, 5> parts);
+	FieldElement(const FieldElement&) = default;
+	FieldElement(FieldElement&&) = default;
 
 	FieldElement invert() const;
 	//FieldElement negative() const;
@@ -24,6 +26,9 @@ public:
 
 	static FieldElement One();
 	static FieldElement Reduce(std::array<uint64_t, 5> parts);
+
+	FieldElement& operator=(const FieldElement&) = default;
+	FieldElement& operator=(FieldElement&&) = default;
 private:
 	std::array<uint64_t, 5> m_repr;
 };

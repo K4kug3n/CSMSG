@@ -62,8 +62,8 @@ public:
 
 	std::array<uint8_t, 32> compute_key_agreement(const KeyPair& key) const;
 	std::array<uint8_t, 32> compute_key_agreement(const PublicKey& key) const;
+	std::array<uint8_t, 64> compute_signature(const std::vector<uint8_t>& msg) const;
 
-	PrivateKey private_key;
 	PublicKey public_key;
 
 	static KeyPair Generate();
@@ -73,6 +73,9 @@ public:
 
 	friend bool operator==(const KeyPair& lhs, const KeyPair& rhs);
 	friend bool operator!=(const KeyPair& lhs, const KeyPair& rhs);
+
+private:
+	PrivateKey m_private_key;
 };
 
 class PreKeyBundle {
