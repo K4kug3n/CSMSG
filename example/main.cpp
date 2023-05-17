@@ -3,8 +3,9 @@
 #include <Keys.hpp>
 #include <X3DH.hpp>
 #include <Ratchet.hpp>
+#include <Message.hpp>
 
-void main() {
+int main() {
 	KeyBundle key_bundle_A = KeyBundle::Generate();
 	
 	KeyBundle key_bundle_B = KeyBundle::Generate();
@@ -15,7 +16,7 @@ void main() {
 
 	Ratchet::State A_state = Ratchet::State::Init_sender(secret_A.shared_key, prekey_bundle_B.identity_key);
 
-	std::vector<uint8_t> plaintext = { 'H', 'e', 'l', 'l', 'o' };
+	Message plaintext{ "Hello" };
 	Ratchet::EncryptedMessage encrypted_msg = A_state.encrypt(plaintext, secret_A.additional_data);
 
 	InitialMessage intial_message{ key_bundle_A.identity_key.public_key, secret_A.ephemeral_key, prekey_bundle_B, encrypted_msg };
@@ -25,9 +26,14 @@ void main() {
 
 	Ratchet::State B_state = Ratchet::State::Init_receiver(secret_B.shared_key, key_bundle_B.identity_key);
 
-	std::vector<uint8_t> received = B_state.decrypt(encrypted_msg, secret_B.additional_data);
+	Message received = B_state.decrypt(encrypted_msg, secret_B.additional_data);
+	std::cout << received << std::endl;
 
-	for(size_t i = 0; i < received.size(); ++i) {
-		std::cout << received[i];
-	}
+	Message plaintext_2{ "World" };
+	Ratchet::EncryptedMessage encrypted_msg_2 = B_state.encrypt(plaintext_2, secret_B.additional_data);
+
+	Message received_2 = A_state.decrypt(encrypted_msg_2, secret_A.additional_data);
+	std::cout << received_2 << std::endl;
+
+	return 0;
 }

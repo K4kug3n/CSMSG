@@ -4,6 +4,7 @@
 
 #include <KDF.hpp>
 #include <AES.hpp>
+#include <Message.hpp>
 
 namespace Ratchet {
 	Header::Header(const KeyPair& dh_pair, uint8_t pn, uint8_t n) :
@@ -77,10 +78,10 @@ namespace Ratchet {
 		N_sender(0), N_receiver(0), PN(0),
 		MK_skipped() { }
 
-	std::vector<uint8_t> State::decrypt(const EncryptedMessage& message, const std::array<uint8_t, 64>& AD) {
+	Message State::decrypt(const EncryptedMessage& message, const std::array<uint8_t, 64>& AD) {
 		std::optional<std::vector<uint8_t>> plaintext = try_skipped_message_keys(message.header, message.ciphertext, AD);
 		if (plaintext) {
-			return plaintext.value();
+			return Message::FromBytes(plaintext.value());
 		}
 
 		if (message.header.public_key != DH_receiver.value_or(PublicKey{ std::array<uint8_t, 32>{} })) {
@@ -94,10 +95,12 @@ namespace Ratchet {
 		CK_receiver = std::make_optional(kdf_ck_result.chain_key);
 		N_receiver += 1;
 
-		return decrypt_algo(kdf_ck_result.message_key, message.ciphertext, Header::Concatenate(AD, message.header));
+		return Message::FromBytes(
+			decrypt_algo(kdf_ck_result.message_key, message.ciphertext, Header::Concatenate(AD, message.header))
+		);
 	}
 
-	EncryptedMessage State::encrypt(const std::vector<uint8_t>& plaintext, const std::array<uint8_t, 64>& AD) {
+	EncryptedMessage State::encrypt(const Message& plaintext, const std::array<uint8_t, 64>& AD) {
 		KdfCkResult kdf_ck_result = KDF_CK(CK_sender.value());
 		CK_sender = std::make_optional(kdf_ck_result.chain_key);
 
@@ -105,7 +108,7 @@ namespace Ratchet {
 
 		N_sender += 1;
 
-		return EncryptedMessage{ header, encrypt_algo(kdf_ck_result.message_key, plaintext, Header::Concatenate(AD, header)) };
+		return EncryptedMessage{ header, encrypt_algo(kdf_ck_result.message_key, plaintext.to_bytes(), Header::Concatenate(AD, header))};
 	}
 
 	State Ratchet::State::Init_sender(std::array<uint8_t, 32> SK, PublicKey bob_public_key) {
