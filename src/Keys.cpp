@@ -138,7 +138,12 @@ KeyPair KeyBundle::find_used_onetime_prekeys(const PublicKey& used_onetime_publi
 }
 
 SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bundle) const {
-	// X3DH protocol 
+	// X3DH protocol
+	const std::array<uint8_t, 32>& prekey_bytes = prekey_bundle.prekey.to_bytes();
+	if (!prekey_bundle.identity_key.verify_signature({ prekey_bytes.begin(), prekey_bytes.end() }, prekey_bundle.prekey_signature)) {
+		throw std::runtime_error("Verify signature of prekey failed");
+	}
+
 	KeyPair ephemeral_key = KeyPair::Generate();
 
 	const std::array<uint8_t, 32> DH1 = identity_key.compute_key_agreement(prekey_bundle.prekey);
@@ -155,9 +160,7 @@ SenderX3DHResult KeyBundle::compute_shared_secret(const PreKeyBundle& prekey_bun
 		DH.insert(DH.end(), DH4.begin(), DH4.end());
 	}
 
-	std::array<uint8_t, 64> AD;
-	std::copy(identity_key.public_key.to_bytes().begin(), identity_key.public_key.to_bytes().end(), AD.begin());
-	std::copy(prekey_bundle.identity_key.to_bytes().begin(), prekey_bundle.identity_key.to_bytes().end(), AD.begin() + 32);
+	std::array<uint8_t, 64> AD = compute_additional_data(identity_key.public_key, prekey_bundle.identity_key);
 
 	return SenderX3DHResult{ KDF(DH), std::move(AD), std::move(ephemeral_key.public_key) };
 }
@@ -180,9 +183,7 @@ ReceiverX3DHResult KeyBundle::compute_shared_secret(const InitialMessage& intial
 		DH.insert(DH.end(), DH4.begin(), DH4.end());
 	}
 
-	std::array<uint8_t, 64> AD;
-	std::copy(intial_message.identity_key.to_bytes().begin(), intial_message.identity_key.to_bytes().end(), AD.begin());
-	std::copy(identity_key.public_key.to_bytes().begin(), identity_key.public_key.to_bytes().end(), AD.begin() + 32);
+	std::array<uint8_t, 64> AD = compute_additional_data(intial_message.identity_key, identity_key.public_key);
 
 	return ReceiverX3DHResult{ KDF(DH), std::move(AD) };
 }

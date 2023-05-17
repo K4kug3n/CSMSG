@@ -34,4 +34,6 @@ public:
 	InitialMessage& operator=(InitialMessage&&) = default;
 };
 
+std::array<uint8_t, 64> compute_additional_data(const PublicKey& pub_key_A, const PublicKey& pub_key_B);
+
 #endif
