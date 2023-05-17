@@ -1,17 +1,20 @@
-# SIMSG
+# CSMSG
 
-SIMSG is a prototype of secure message exchange, using Signal protocol as end-to-end encryption, for the course of Advanced Security from University of Geneva.
+CSMSG is a prototype of secure message exchange, using Signal protocol as end-to-end encryption, for the course of Advanced Security from University of Geneva.
 
 ## Build
 
 This project use CMake as a project generator. To generate, use :
-> cmake build
+> cmake -B./build/ .
 
-Then use the generate file for your compiler to build the project
+Then use the generated files in `./build/` for your compiler to build the project.  
+
+Use C++17.
 
 ## External library
 
 - Boost multiprecision for integer with more than 64bits
+- Catch2 for unit tests
 
 ## Logbook
 
