@@ -1,6 +1,6 @@
 # CSMSG
 
-CSMSG is a prototype of secure message exchange, using Signal protocol as end-to-end encryption, for the course of Advanced Security from University of Geneva.
+CSMSG is a small implementation of Signal protocol as a prototype of secure message exchange, for the course of Advanced Security from University of Geneva.
 
 ## Realisation
 
