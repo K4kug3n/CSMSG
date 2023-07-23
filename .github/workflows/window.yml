@@ -1,0 +1,19 @@
+name: Window-Build
+on: [push]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Get project
+        uses: actions/checkout@v3
+
+      - name: Install xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Build targets
+        run: xmake build --yes
+
+      - name: Run tests
+        run: xmake run tests
