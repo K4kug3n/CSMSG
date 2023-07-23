@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <array>
+#include <cstdint>
 
 class FieldElement {
 public:
