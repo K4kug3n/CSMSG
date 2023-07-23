@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <cstddef>
 
 std::array<uint8_t, 32> KDF(std::vector<uint8_t> KM);
 
