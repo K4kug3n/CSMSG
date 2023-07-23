@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <cstdint>
 
 std::array<uint8_t, 64> XEdDSA_sign(const std::array<uint8_t, 32>& priv, const std::vector<uint8_t>& msg, const std::array<uint8_t, 64>& nonce);
 
