@@ -1,4 +1,4 @@
-name: Window-Build
+name: window
 on: [push]
 jobs:
   build:
