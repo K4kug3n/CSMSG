@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <cstdint>
 
 std::array<uint8_t, 16> AES_block_encryption(const std::array<uint8_t, 16>& plaintext, const std::array<uint8_t, 32>& key);
 
