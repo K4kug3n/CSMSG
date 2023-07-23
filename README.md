@@ -2,12 +2,26 @@
 
 CSMSG is a prototype of secure message exchange, using Signal protocol as end-to-end encryption, for the course of Advanced Security from University of Geneva.
 
+## Realisation
+
+- Key generation with Elliptic Curve25519 following RFC 7748
+- SHA512 following Nist paper
+- EdDSA signature folowing RFC 8032
+- XEdDSA signature following libsignal scheme
+- HKDF following RFC 5869
+- HMAC-SHA512 following RFC 2104
+- AES-256 block encryption with Nist test vector
+- CBC encryption mode to AES
+- Double Ratchet algorithm
+
 ## Build
 
-This project use CMake as a project generator. To generate, use :
+This project can use CMake as a project generator. To generate, use :
 > cmake -B./build/ .
 
 Then use the generated files in `./build/` for your compiler to build the project.  
+
+This project can also be used with xmake as build utility.  
 
 Use C++17.
 
@@ -15,32 +29,3 @@ Use C++17.
 
 - Boost multiprecision for integer with more than 64bits
 - Catch2 for unit tests
-
-## Logbook
-
-28/03 - 04/04 :
-- Implementation of key generation with Elliptic Curve25519 following RFC 7748
-
-04/04 - 11/04 :
-- Implementation of SHA512 following Nist paper
-- Search about XEdDSA signature and but failed implementation
-- Implementation of EdDSA signature folowing RFC 8032
-
-11/04 - 18/04 :
-- Implementation of XEdDSA signature following libsignal scheme
-- Implementation of HKDF following RFC 5869
-- Implementation of HMAC-SHA512 following RFC 2104
-
-25/04 - 02/05 :
-- Implementation of AES-256 block encryption with Nist test vector
-- Add CBC encryption mode to AES
-- Start report
-
-02/05 - 09/05 :
-- Implementation of Double Ratchet algorithm
-- Continue report
-
-09/05 - 16/05 :
-- Finalize report
-- Add initial message notion
-- Finalize implementation
