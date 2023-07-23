@@ -1,3 +1,14 @@
+<div align="center">
+  <div>
+    <a href="https://github.com/K4kug3n/CSMSG/actions?query=workflow%3Awindow">
+      <img src="https://github.com/K4kug3n/CSMSG/workflows/window/badge.svg" alt="github-ci" />
+    </a>
+    <a href="https://github.com/K4kug3n/CSMSG/actions?query=workflow%3Alinux">
+      <img src="https://github.com/K4kug3n/CSMSG/workflows/linux/badge.svg" alt="github-ci" />
+    </a>
+  </div>
+</div>
+
 # CSMSG
 
 CSMSG is a small implementation of Signal protocol as a prototype of secure message exchange, for the course of Advanced Security from University of Geneva.
